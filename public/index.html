@@ -1,0 +1,156 @@
+<html>
+  <head>
+    <script src="https://static.opentok.com/v2/js/opentok.min.js"></script>
+    <script src="audioLevel.js"></script>
+  </head>
+  <body>
+    <div style="margin-left: 16px; margin-right: 16px;">
+      <div id="session-control" style="margin-bottom: 16px;">
+        <label>API Key</label>
+        <input type="text" id="apiKey" />
+        
+        <label>Session ID</label>
+        <input type="text" id="sessionId" />
+        
+        <label>Token</label>
+        <input type="text" id="token" />
+        
+        <button onclick="initializeSession()">Connect</button>
+      </div>
+      
+      <div style="margin-bottom: 16px;">
+        <button onclick="startCamera()">Publish Camera</button>
+        <button onclick="stopCamera()">Unpublish Camera</button>
+      </div>
+
+      <div id="publisher-level" style="margin-bottom: 16px;">
+
+      </div>
+      <div id="subscriber-level" style="margin-bottom: 16px;">
+
+      </div>
+    </div>
+    
+    <div id="layoutContainer"></div>
+
+    <script>
+      let OTSession;
+
+      const otSpeech = OTSpeech();
+      
+      let cameraPublisher = null;
+
+      function handleError(error) {
+        console.log(error);
+      }
+
+      function initializeSession() {
+        // const apiKey = document.getElementById('apiKey').value;
+        // const sessionId = document.getElementById('sessionId').value;
+        // const token = document.getElementById('token').value;
+        const apiKey = '46481982';
+        const sessionId = '1_MX40NjQ4MTk4Mn5-MTYwMjAzOTczMTI3M353THJlNUVWRC9lMnhuY3FrZHhOaENuUTR-fg';
+        const token = 'T1==cGFydG5lcl9pZD00NjQ4MTk4MiZzaWc9YWU2YTFkNjEwYzJmYWYzNmEwMWJhNGRmYmJlN2YzMzRmYTljMDQ0NDpzZXNzaW9uX2lkPTFfTVg0ME5qUTRNVGs0TW41LU1UWXdNakF6T1Rjek1USTNNMzUzVEhKbE5VVldSQzlsTW5odVkzRnJaSGhPYUVOdVVUUi1mZyZjcmVhdGVfdGltZT0xNjAyMDM5NzM3Jm5vbmNlPTAuNTMyMjEyNDIyNDU1ODg2JnJvbGU9cHVibGlzaGVyJmV4cGlyZV90aW1lPTE2MDIxMjYxMzcmaW5pdGlhbF9sYXlvdXRfY2xhc3NfbGlzdD0=';
+
+        OTSession = OT.initSession(apiKey, sessionId);
+        console.log('Session Created');
+        
+        OTSession.on('streamCreated', (event) => {
+          subscriber = OTSession.subscribe(event.stream, 'layoutContainer', {
+            insertMode: 'append',
+            fitMode: 'contain',
+            width: 640,
+            height: 480,
+          }, (error) => {
+            if (error) {
+              return handleError(error);
+            }
+
+            // Add Subscriber to OT Speech
+            otSpeech.addSubscriber(subscriber);
+
+            // Get Audio Level
+            subscriber.on('audioLevelUpdated', (e) => {
+              document.getElementById('subscriber-level').innerText = `${subscriber.stream.id} ${e.audioLevel}`;
+
+              // Update Audio Level to OT Speech
+              otSpeech.addAudioLevel(subscriber.id, e.audioLevel);
+            });
+          });
+          
+          console.log(`Received Stream at ${event.stream.videoDimensions.width}x${event.stream.videoDimensions.height}`);
+        });
+
+        OTSession.on('streamDestroyed', (event) => {
+          console.log('Stream Destroyed');
+
+          // Remove Subscriber from OT Speech
+          otSpeech.removeSubscriberByStreamId(event.stream.id);
+        });
+        
+        OTSession.connect(token, (error) => {
+          if (error) {
+            handleError(error);
+            alert(error.message);
+            return;
+          }
+          
+          console.log('Session Ready');
+          document.getElementById('session-control').hidden = true
+        });
+      }
+      
+      async function startCamera() {
+        stopCamera();
+        try {
+          cameraPublisher = OT.initPublisher('layoutContainer', {
+            publishAudio: true,
+            publishVideo: true,
+            fitMode: 'contain',
+            insertMode: 'append',
+            width: 640,
+            height: 480,
+          }, (error) => {
+            if (error) {
+              handleError(error);
+              return;
+            }
+
+            // Add Publisher to OT Speech
+            otSpeech.addPublisher(cameraPublisher);
+
+            // Get Audio Level
+            cameraPublisher.on('audioLevelUpdated', (e) => {
+              document.getElementById('publisher-level').innerText = `Self ${e.audioLevel}`;
+
+              // Update Audio Level to OT Speech
+              otSpeech.addAudioLevel(cameraPublisher.id, e.audioLevel);
+            });
+            
+            OTSession.publish(cameraPublisher, (err) => {
+              if (err) {
+                handleError(error);
+                return;
+              }
+
+              setTimeout(() => console.log(`StreamID: ${cameraPublisher.streamId}`), 5000);
+            })
+          });
+        } catch (error) {
+          handleError(error);
+        }
+      }
+      
+      function stopCamera() {
+        if (cameraPublisher != null) {
+          // Rmoeve Publisher from OT Speech
+          otSpeech.removePublisherByStreamId(cameraPublisher.streamId);
+
+          OTSession.unpublish(cameraPublisher);
+          cameraPublisher = null;
+        }
+      }
+
+    </script>
+  </body>
+</html>
