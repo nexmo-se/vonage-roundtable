@@ -15,10 +15,17 @@ OTSpeech = (options) => {
 
   };
 
-  const getMovingAverage =  (audioLevels = []) => {
-    const count = audioLevels.length;
-    const sum = audioLevels.reduce((prev, cur, index) => prev + cur, 0);
-    return sum / count;
+  const getOrderedChannels = () => {
+    return Object.keys(channels)
+      .sort((a, b) => b.movingAverageAudioLevel - a.movingAverageAudioLevel); // Order from largest to smallest
+  };
+
+  const getMovingAverage =  (previousMovingAverage, currentAudioLevel) => {
+    if (previousMovingAverage == null || previousMovingAverage <= currentAudioLevel) {
+      return currentAudioLevel;
+    } else {
+      return 0.7 * previousMovingAverage + 0.3 * currentAudioLevel;
+    }
   };
 
   const addAudioLevel = (channelId, audioLevel) => {
@@ -27,19 +34,8 @@ OTSpeech = (options) => {
       return;
     }
 
-    // Add to Audio Levels
-    channels[channelId].audioLevels.push(audioLevel);
-
-    // Trim Audio Levels to MA count
-    const count = channels[channelId].audioLevels.length;
-    if (count > config.movingAverageCount) {
-      // Update with sub array
-      const startIndex = count - config.movingAverageCount;
-      channels[channelId].audioLevels = channels[channelId].audioLevels.slice(startIndex);
-    }
-
     // Calculate Moving Average
-    channels[channelId].audioLevels = getMovingAverage(channels[channelId].audioLevels);
+    channels[channelId].movingAverageAudioLevel = getMovingAverage(channels[channelId].movingAverageAudioLevel, audioLevel);
   };
 
   const addPublisher = (publisher) => {
@@ -47,7 +43,7 @@ OTSpeech = (options) => {
     channels[publisher.id] = {
       type: 'publisher',
       publisher,
-      audioLevels: [],
+      movingAverageAudioLevel: 0,
     }
   };
 
@@ -86,7 +82,7 @@ OTSpeech = (options) => {
     channels[subscriber.id] = {
       type: 'subscriber',
       subscriber,
-      audioLevels: [],
+      movingAverageAudioLevel: 0,
     }
   };
 
