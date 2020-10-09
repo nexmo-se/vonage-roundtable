@@ -11,13 +11,14 @@ OTSpeech = (options) => {
     return logLevel > 0.5;
   };
 
-  const updateSpeech = (audioLevel, channel) => {
-
-  };
-
   const getOrderedChannels = () => {
     return Object.keys(channels)
-      .sort((a, b) => b.movingAverageAudioLevel - a.movingAverageAudioLevel); // Order from largest to smallest
+      .sort((a, b) => channels[b].movingAverageAudioLevel - channels[a].movingAverageAudioLevel) // Order from largest to smallest
+      .map(channelId => ({
+        ...channels[channelId],
+        id: channelId,
+        isSelf: channels[channelId].type === 'publisher',
+      }));
   };
 
   const getMovingAverage =  (previousMovingAverage, currentAudioLevel) => {
@@ -29,6 +30,10 @@ OTSpeech = (options) => {
   };
 
   const addAudioLevel = (channelId, audioLevel) => {
+    if (channelId == null) {
+      return;
+    }
+
     if(channels[channelId] == null) {
       console.log(`Channel ${channelId} does not exist`);
       return;
@@ -36,6 +41,9 @@ OTSpeech = (options) => {
 
     // Calculate Moving Average
     channels[channelId].movingAverageAudioLevel = getMovingAverage(channels[channelId].movingAverageAudioLevel, audioLevel);
+
+    // Check for speech start
+    const voiceDetected = isVoice(channels[channelId].movingAverageAudioLevel);
   };
 
   const addPublisher = (publisher) => {
@@ -120,6 +128,7 @@ OTSpeech = (options) => {
 
   return {
     addAudioLevel,
+    getOrderedChannels,
 
     addPublisher,
     removePublisher,

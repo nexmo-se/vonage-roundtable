@@ -1,20 +1,13 @@
 <html>
   <head>
     <script src="https://static.opentok.com/v2/js/opentok.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/opentok-layout-js@3.7.1/opentok-layout.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
     <script src="audioLevel.js"></script>
   </head>
   <body>
-    <div style="margin-left: 16px; margin-right: 16px;">
+    <div style="margin-left: 16px; margin-right: 16px; display: flex; flex-direction: column;">
       <div id="session-control" style="margin-bottom: 16px;">
-        <label>API Key</label>
-        <input type="text" id="apiKey" />
-        
-        <label>Session ID</label>
-        <input type="text" id="sessionId" />
-        
-        <label>Token</label>
-        <input type="text" id="token" />
-        
         <button onclick="initializeSession()">Connect</button>
       </div>
       
@@ -23,15 +16,18 @@
         <button onclick="stopCamera()">Unpublish Camera</button>
       </div>
 
-      <div id="publisher-level" style="margin-bottom: 16px;">
+      <div id="publisher-level" style="margin-bottom: 16px; color: red;">
 
       </div>
-      <div id="subscriber-level" style="margin-bottom: 16px;">
+      <div id="subscriber-level" style="margin-bottom: 16px; display: none;">
 
       </div>
+      
+      <div>Ordered Audio Level</div>
+      <div id="ordered-level" style="margin-bottom: 16px; padding: 16px; border: 1px solid #000"></div>
     </div>
     
-    <div id="layoutContainer"></div>
+    <div id="layoutContainer" style="position: relative; display: flex; flex: 1; height:  100vh"></div>
 
     <script>
       let OTSession;
@@ -40,23 +36,31 @@
       
       let cameraPublisher = null;
 
+      const layoutContainer = document.getElementById("layoutContainer");
+      const layout = initLayoutContainer(layoutContainer, {
+        animate: {
+          duration: 500,
+          easing: 'swing',
+        },
+        fixedRatio: false,
+        bigFixedRatio: false,
+        bigClass: "big",
+      }).layout;
+
       function handleError(error) {
         console.log(error);
       }
 
       function initializeSession() {
-        // const apiKey = document.getElementById('apiKey').value;
-        // const sessionId = document.getElementById('sessionId').value;
-        // const token = document.getElementById('token').value;
         const apiKey = '46481982';
         const sessionId = '1_MX40NjQ4MTk4Mn5-MTYwMjAzOTczMTI3M353THJlNUVWRC9lMnhuY3FrZHhOaENuUTR-fg';
-        const token = 'T1==cGFydG5lcl9pZD00NjQ4MTk4MiZzaWc9YWU2YTFkNjEwYzJmYWYzNmEwMWJhNGRmYmJlN2YzMzRmYTljMDQ0NDpzZXNzaW9uX2lkPTFfTVg0ME5qUTRNVGs0TW41LU1UWXdNakF6T1Rjek1USTNNMzUzVEhKbE5VVldSQzlsTW5odVkzRnJaSGhPYUVOdVVUUi1mZyZjcmVhdGVfdGltZT0xNjAyMDM5NzM3Jm5vbmNlPTAuNTMyMjEyNDIyNDU1ODg2JnJvbGU9cHVibGlzaGVyJmV4cGlyZV90aW1lPTE2MDIxMjYxMzcmaW5pdGlhbF9sYXlvdXRfY2xhc3NfbGlzdD0=';
+        const token = 'T1==cGFydG5lcl9pZD00NjQ4MTk4MiZzaWc9ZWM5YzMyZGU1YmNlNTAwY2FkYzU4OTI4MzU4MGM3M2MxZTNmOGIyOTpzZXNzaW9uX2lkPTFfTVg0ME5qUTRNVGs0TW41LU1UWXdNakF6T1Rjek1USTNNMzUzVEhKbE5VVldSQzlsTW5odVkzRnJaSGhPYUVOdVVUUi1mZyZjcmVhdGVfdGltZT0xNjAyMjA5ODkzJm5vbmNlPTAuMzE4NzcyNTk1NzM3ODA4MjUmcm9sZT1wdWJsaXNoZXImZXhwaXJlX3RpbWU9MTYwMjI5NjI5MyZpbml0aWFsX2xheW91dF9jbGFzc19saXN0PQ==';
 
         OTSession = OT.initSession(apiKey, sessionId);
         console.log('Session Created');
         
         OTSession.on('streamCreated', (event) => {
-          subscriber = OTSession.subscribe(event.stream, 'layoutContainer', {
+          const subscriber = OTSession.subscribe(event.stream, 'layoutContainer', {
             insertMode: 'append',
             fitMode: 'contain',
             width: 640,
@@ -71,11 +75,15 @@
 
             // Get Audio Level
             subscriber.on('audioLevelUpdated', (e) => {
-              document.getElementById('subscriber-level').innerText = `${subscriber.stream.id} ${e.audioLevel}`;
+              document.getElementById('subscriber-level').innerText = `${subscriber.id} ${e.audioLevel}`;
 
               // Update Audio Level to OT Speech
               otSpeech.addAudioLevel(subscriber.id, e.audioLevel);
+              updateSpeakers();
             });
+
+            // Adjust Layout
+            layout();
           });
           
           console.log(`Received Stream at ${event.stream.videoDimensions.width}x${event.stream.videoDimensions.height}`);
@@ -86,6 +94,9 @@
 
           // Remove Subscriber from OT Speech
           otSpeech.removeSubscriberByStreamId(event.stream.id);
+
+          // Adjust Layout
+          layout();
         });
         
         OTSession.connect(token, (error) => {
@@ -98,6 +109,31 @@
           console.log('Session Ready');
           document.getElementById('session-control').hidden = true
         });
+      }
+
+      function onSpeakerOrderChanged(updatedSpeakers) {
+        for (let i = 0; i < updatedSpeakers.length; i += 1) {
+          const speaker = updatedSpeakers[i];
+          const channelElement = document.getElementById(speaker.id);
+          
+          channelElement.classList.add('big');
+          if (i !== 0) {
+            channelElement.classList.remove('big');
+          }
+        }
+        layout();
+      }
+
+      function updateSpeakers() {
+        const speakers = otSpeech.getOrderedChannels()
+          .map(speaker => ({
+            id: speaker.id,
+            isSelf: speaker.isSelf,
+            audioLevel: speaker.movingAverageAudioLevel
+          }));
+
+        const orderedLevel = document.getElementById('ordered-level');
+        orderedLevel.innerText = speakers.map(speaker => `${speaker.id}${speaker.isSelf ? ' (self)' : ''}: ${speaker.audioLevel}`).join('\n');
       }
       
       async function startCamera() {
@@ -121,10 +157,11 @@
 
             // Get Audio Level
             cameraPublisher.on('audioLevelUpdated', (e) => {
-              document.getElementById('publisher-level').innerText = `Self ${e.audioLevel}`;
+              document.getElementById('publisher-level').innerText = `${cameraPublisher.id} (self) ${e.audioLevel}`;
 
               // Update Audio Level to OT Speech
               otSpeech.addAudioLevel(cameraPublisher.id, e.audioLevel);
+              updateSpeakers();
             });
             
             OTSession.publish(cameraPublisher, (err) => {
@@ -132,6 +169,9 @@
                 handleError(error);
                 return;
               }
+
+              // Adjust Layout
+              layout();
 
               setTimeout(() => console.log(`StreamID: ${cameraPublisher.streamId}`), 5000);
             })
@@ -148,6 +188,8 @@
 
           OTSession.unpublish(cameraPublisher);
           cameraPublisher = null;
+
+          layout();
         }
       }
 
