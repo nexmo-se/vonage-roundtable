@@ -4,6 +4,15 @@
     <script src="https://cdn.jsdelivr.net/npm/opentok-layout-js@3.7.1/opentok-layout.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
     <script src="audioLevel.js"></script>
+
+    <style>
+      .active {
+        background-color: red;
+      }
+      .notactive {
+        background-color: white;
+      }
+    </style>
   </head>
   <body>
     <div style="margin-left: 16px; margin-right: 16px; display: flex; flex-direction: column;">
@@ -14,6 +23,14 @@
       <div style="margin-bottom: 16px;">
         <button onclick="startCamera()">Publish Camera</button>
         <button onclick="stopCamera()">Unpublish Camera</button>
+      </div>
+
+      <div style="margin-bottom: 16px;">
+        <input type="checkbox" id="audioDisabled" onchange="toggleAudioDisable()"/>
+        <label for="audioDisabled">Disable Audio</label>
+
+        <input type="checkbox" id="videoDisabled" onchange="toggleVideoDisable()"/>
+        <label for="videoDisabled">Disable Video</label>
       </div>
 
       <div id="publisher-level" style="margin-bottom: 16px; color: red;">
@@ -32,11 +49,14 @@
 
     <script>
       let OTSession;
+      const numberOfActiveSpeakers = 2;
 
-      const otSpeech = OTSpeech();
+      const otSpeech = OTSpeech({ numberOfActiveSpeakers });
       otSpeech.setOnActiveSpeakerChangeListener(onSpeakerOrderChanged);
       
       let cameraPublisher = null;
+      let forceAudioOff = false;
+      let forceVideoOff = false;
 
       const layoutContainer = document.getElementById("layoutContainer");
       const layout = initLayoutContainer(layoutContainer, {
@@ -112,8 +132,6 @@
         const orderedLevel = document.getElementById('ordered-level');
         orderedLevel.innerText = updatedSpeakers.map(speaker => `${speaker.id}${speaker.isSelf ? ' (self)' : ''}`).join('\n');
 
-        // Update Layout
-        const numberOfActiveSpeakers = 4;
         // Clear all Big classes
         const children = layoutContainer.childNodes;
         for (let i = 0; i < children.length; i += 1) {
@@ -132,6 +150,26 @@
           }
         }
         layout();
+
+        // Check if self is active speaker
+        if (cameraPublisher != null) {
+          let shouldEnableAudio = false;
+          let shouldEnableVideo = false;
+          document.body.classList.add('notactive');
+          for (let i = 0; i < Math.min(numberOfActiveSpeakers, updatedSpeakers.length); i += 1) {
+            const speaker = updatedSpeakers[i];
+            if (speaker.id === cameraPublisher.id) {
+              // Self is active speaker
+              document.body.classList.add('active');
+
+              shouldEnableAudio = !forceAudioOff;
+              shouldEnableVideo = !forceVideoOff;
+              break;
+            }
+          }
+          cameraPublisher.publishAudio(shouldEnableAudio);
+          cameraPublisher.publishVideo(shouldEnableVideo);
+        }
       }
       
       async function startCamera() {
@@ -187,6 +225,30 @@
           cameraPublisher = null;
 
           layout();
+        }
+      }
+
+      function toggleAudioDisable(e) {
+        const checkbox = document.getElementById('audioDisabled');
+        forceAudioOff = checkbox.checked;
+        const shouldEnableAudio = !forceAudioOff;
+
+        document.body.classList.add('notactive');
+        if (otSpeech.isSelfActiveSpeaker() && cameraPublisher != null) {
+          cameraPublisher.publishAudio(shouldEnableAudio);
+          document.body.classList.add('active');
+        }
+      }
+
+      function toggleVideoDisable(e) {
+        const checkbox = document.getElementById('videoDisabled');
+        forceVideoOff = checkbox.checked;
+        const shouldEnableVideo = !forceVideoOff;
+
+        document.body.classList.add('notactive');
+        if (otSpeech.isSelfActiveSpeaker() && cameraPublisher != null) {
+          cameraPublisher.publishVideo(shouldEnableVideo);
+          document.body.classList.add('active');
         }
       }
 

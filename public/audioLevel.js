@@ -1,9 +1,14 @@
 OTSpeech = (options) => {
   const config = Object.assign({
     movingAverageCount: 100,
+    consecutiveVoiceMs: 100,
+    consecutiveSilenceMs: 300,
+    numberOfActiveSpeakers: 2,
   }, options);
 
   const channels = {};
+  let currentSpeakerOrder = [];
+  let onActiveSpeakerChangeListener = null;
 
   const isVoice = (maLevel) => {
     let logLevel = (Math.log(maLevel) / Math.LN10) / 1.5 + 1;
@@ -11,14 +16,50 @@ OTSpeech = (options) => {
     return logLevel > 0.5;
   };
 
-  const getOrderedChannels = () => {
-    return Object.keys(channels)
-      .sort((a, b) => channels[b].movingAverageAudioLevel - channels[a].movingAverageAudioLevel) // Order from largest to smallest
-      .map(channelId => ({
-        ...channels[channelId],
-        id: channelId,
-        isSelf: channels[channelId].type === 'publisher',
-      }));
+  const getOrderedChannels = () => Object.keys(channels)
+    .sort((a, b) => {
+      if (a.inSpeech && b.inSpeech) {
+        if (a.speechStart !== b.speechStart) {
+          // Whichever starts first in front
+          return a.speechStart - b.speechStart;
+        } else {
+          // Both starts at the same time, compare moving average audio level
+          return channels[b].movingAverageAudioLevel - channels[a].movingAverageAudioLevel; // Order from largest to smallest
+        }
+      } else if (a.inSpeech && !(b.inSpeech)) {
+        // B behind A
+        return -1;
+      } else if (!(a.inSpeech) && b.inSpeech) {
+        // A behind B
+        return 1;
+      } else {
+        // Both also not in speech, compare moving average audio level
+        return channels[b].movingAverageAudioLevel - channels[a].movingAverageAudioLevel; // Order from largest to smallest
+      }
+    })
+    .map(channelId => ({
+      ...channels[channelId],
+      id: channelId,
+      isSelf: channels[channelId].type === 'publisher',
+    }));
+
+  const checkActiveSpeakerChange = () => {
+    const newSpeakerOrder = getOrderedChannels();
+
+    const newIds = JSON.stringify(newSpeakerOrder.map(speaker => speaker.id)
+      .slice(0, Math.min(config.numberOfActiveSpeakers, newSpeakerOrder.length))
+    );
+    const oldIds = JSON.stringify(currentSpeakerOrder.map(speaker => speaker.id)
+      .slice(0, Math.min(config.numberOfActiveSpeakers, currentSpeakerOrder.length))
+    );
+
+    if (newIds !== oldIds) {
+      if (onActiveSpeakerChangeListener != null) {
+        onActiveSpeakerChangeListener(newSpeakerOrder);
+      }
+    }
+
+    currentSpeakerOrder = newSpeakerOrder;
   };
 
   const getMovingAverage =  (previousMovingAverage, currentAudioLevel) => {
@@ -27,6 +68,17 @@ OTSpeech = (options) => {
     } else {
       return 0.7 * previousMovingAverage + 0.3 * currentAudioLevel;
     }
+  };
+
+  const isSelfActiveSpeaker = () => {
+    for (let i = 0; i < currentSpeakerOrder.length; i += 1) {
+      const speaker = currentSpeakerOrder[i];
+      if (speaker.isSelf) {
+        return true;
+      }
+    }
+
+    return false;
   };
 
   const addAudioLevel = (channelId, audioLevel) => {
@@ -43,7 +95,48 @@ OTSpeech = (options) => {
     channels[channelId].movingAverageAudioLevel = getMovingAverage(channels[channelId].movingAverageAudioLevel, audioLevel);
 
     // Check for speech start
+    const currentTime = new Date().getTime();
     const voiceDetected = isVoice(channels[channelId].movingAverageAudioLevel);
+
+    if (voiceDetected) {
+      // Voice Detected
+      if (channels[channelId].speechStartTest === 0) {
+        // Has not started test for start
+        channels[channelId].speechStartTest = currentTime;
+      } else if (channels[channelId].speechStartTest < currentTime + config.consecutiveVoiceMs) {
+        // Speech started or within speech
+        channels[channelId].inSpeech = true;
+        channels[channelId].speechStartTest = 0;
+
+        // Set Speech start time
+        if (channels[channelId].speechStart === 0) {
+          channels[channelId].speechStart = currentTime;
+        }
+      }
+
+      // Reset First Silence
+      channels[channelId].speechEndTest = 0;
+    } else {
+      // Silence Detected
+      if (channels[channelId].speechEndTest === 0) {
+        // Has not started test for end
+        channels[channelId].speechEndTest = currentTime;
+      } else if (channels[channelId.speechEndTest] < currentTime + config.consecutiveSilenceMs) {
+        // Speech ended
+        channels[channelId].inSpeech = false;
+        channels[channelId].speechEndTest = 0;
+
+        // Reset Speech start time
+        channels[channelId].speechStart = 0;
+      }
+      
+      // Reset First Voice
+      channels[channelId].speechStartTest = 0;
+    }
+
+
+    // Check Active Speaker Change
+    checkActiveSpeakerChange();
   };
 
   const addPublisher = (publisher) => {
@@ -52,6 +145,9 @@ OTSpeech = (options) => {
       type: 'publisher',
       publisher,
       movingAverageAudioLevel: 0,
+      speechStartTest: 0,
+      speechEndTest: 0,
+      inSpeech: false,
     }
   };
 
@@ -91,6 +187,9 @@ OTSpeech = (options) => {
       type: 'subscriber',
       subscriber,
       movingAverageAudioLevel: 0,
+      speechStartTest: 0,
+      speechEndTest: 0,
+      inSpeech: false,
     }
   };
 
@@ -126,9 +225,16 @@ OTSpeech = (options) => {
 
   const getChannels = () => channels;
 
+  const setOnActiveSpeakerChangeListener = (listener) => {
+    onActiveSpeakerChangeListener = listener;
+  };
+
   return {
     addAudioLevel,
+    getChannels,
     getOrderedChannels,
+    setOnActiveSpeakerChangeListener,
+    isSelfActiveSpeaker,
 
     addPublisher,
     removePublisher,
@@ -139,7 +245,5 @@ OTSpeech = (options) => {
     removeSubscriber,
     removeSubscriberByStreamId,
     getSubscriberByStreamId,
-
-    getChannels,
   };
 };
