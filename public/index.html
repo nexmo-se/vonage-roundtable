@@ -41,6 +41,15 @@
 
       <div id="publisher-level" style="margin-bottom: 16px; color: red;"></div>
 
+      <div>
+        <span>Maximum Number of Active Speakers:</span>
+        <span id="numberOfActiveSpeakersText" style="margin-left: 4px;">2</span>
+      </div>
+      <input id="numberOfActiveSpeakers" style="margin-bottom: 16px;"
+        type="range" min="1" max="20" value="2" class="slider"
+        onchange="changeNumberOfActiveSpeakers()"
+        oninput="changeNumberOfActiveSpeakersText()" />
+
       <div>Available Speakers (Check to Pin)</div>
       <div id="speaker-list" style="margin-bottom: 16px; padding: 16px; border: 1px solid #000"></div>
       
@@ -49,9 +58,9 @@
     </div>
 
     <script>
-      const numberOfActiveSpeakers = 2;
+      const initialNumberOfActiveSpeakers = 2;
 
-      const otSpeech = OTSpeech({ numberOfActiveSpeakers });
+      const otSpeech = OTSpeech({ numberOfActiveSpeakers: initialNumberOfActiveSpeakers });
       otSpeech.setOnActiveSpeakerChangeListener(onSpeakerOrderChanged);
       
       let OTSession;
@@ -319,6 +328,16 @@
         forceVideoOff = checkbox.checked;
         const shouldEnableVideo = !forceVideoOff;
         cameraPublisher.publishVideo(shouldEnableVideo);
+      }
+
+      function changeNumberOfActiveSpeakersText() {
+        const numberOfActiveSpeakers = document.getElementById('numberOfActiveSpeakers').value;
+        document.getElementById('numberOfActiveSpeakersText').innerText = numberOfActiveSpeakers;
+      }
+
+      function changeNumberOfActiveSpeakers() {
+        const numberOfActiveSpeakers = document.getElementById('numberOfActiveSpeakers').value;
+        otSpeech.setNumberOfActiveSpeakers(numberOfActiveSpeakers);
       }
 
     </script>

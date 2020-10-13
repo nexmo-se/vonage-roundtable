@@ -246,6 +246,11 @@ OTSpeech = (options) => {
     onActiveSpeakerChangeListener = listener;
   };
 
+  const setNumberOfActiveSpeakers = (value) => {
+    console.log(`Setting Number of Active Speakers to ${value}`);
+    config.numberOfActiveSpeakers = value;
+  };
+
   return {
     addAudioLevel,
     getChannels,
@@ -253,6 +258,7 @@ OTSpeech = (options) => {
     setOnActiveSpeakerChangeListener,
     isSelfActiveSpeaker,
     setSpeakerPin,
+    setNumberOfActiveSpeakers,
 
     addPublisher,
     removePublisher,
