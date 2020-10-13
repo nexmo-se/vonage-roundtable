@@ -6,12 +6,6 @@
     <script src="audioLevel.js"></script>
 
     <style>
-      .active {
-        background-color: red;
-      }
-      .notactive {
-        background-color: white;
-      }
     </style>
   </head>
   <body>
@@ -45,7 +39,7 @@
     </div>
     
     <div id="layoutContainer" style="position: relative; display: flex; flex: 1; height:  100vh"></div>
-    <div id="publisherContainer" style="position: relative; display: flex; flex: 1; height: 100vh; display: none;"></div>
+    <div id="publisherContainer" style="display: none"></div>
 
     <script>
       let OTSession;
@@ -57,6 +51,8 @@
       let cameraPublisher = null;
       let forceAudioOff = false;
       let forceVideoOff = false;
+
+      const audioLevels = {};
 
       const layoutContainer = document.getElementById("layoutContainer");
       const layout = initLayoutContainer(layoutContainer, {
@@ -72,7 +68,18 @@
       function initializeSession() {
         const apiKey = '46481982';
         const sessionId = '1_MX40NjQ4MTk4Mn5-MTYwMjAzOTczMTI3M353THJlNUVWRC9lMnhuY3FrZHhOaENuUTR-fg';
-        const token = 'T1==cGFydG5lcl9pZD00NjQ4MTk4MiZzaWc9NDBlZjMwNWJjMjRjNjFiYjIxZTk3NDYzMjhkZDU1M2JkMzU0MDE2YTpzZXNzaW9uX2lkPTFfTVg0ME5qUTRNVGs0TW41LU1UWXdNakF6T1Rjek1USTNNMzUzVEhKbE5VVldSQzlsTW5odVkzRnJaSGhPYUVOdVVUUi1mZyZjcmVhdGVfdGltZT0xNjAyNDcwNTUyJm5vbmNlPTAuNjkxNjExNjI2NjEyMTA0JnJvbGU9cHVibGlzaGVyJmV4cGlyZV90aW1lPTE2MDI1NTY5NTImaW5pdGlhbF9sYXlvdXRfY2xhc3NfbGlzdD0=';
+        const token = 'T1==cGFydG5lcl9pZD00NjQ4MTk4MiZzaWc9YTNiYjkyN2Q4ZDczNWVmYTEwOGM0MmVlNDQ1MjAwNTBkMjg3ZWI1ZjpzZXNzaW9uX2lkPTFfTVg0ME5qUTRNVGs0TW41LU1UWXdNakF6T1Rjek1USTNNMzUzVEhKbE5VVldSQzlsTW5odVkzRnJaSGhPYUVOdVVUUi1mZyZjcmVhdGVfdGltZT0xNjAyNTUzNzM4Jm5vbmNlPTAuNjY3NTQ0MDAxMzkwMjc0MyZyb2xlPXB1Ymxpc2hlciZleHBpcmVfdGltZT0xNjAyNjQwMTM4JmluaXRpYWxfbGF5b3V0X2NsYXNzX2xpc3Q9';
+
+        setInterval(() => {
+          const keys = Object.keys(audioLevels);
+          for (let i = 0; i < keys.length; i += 1) {
+            const key = keys[i];
+            const { channel, audioLevel } = audioLevels[key];
+
+            // Update Audio Level to OT Speech
+            otSpeech.addAudioLevel(channel.id, audioLevel);
+          }
+        }, 100);
 
         OTSession = OT.initSession(apiKey, sessionId);
         console.log('Session Created');
@@ -93,10 +100,10 @@
 
             // Get Audio Level
             subscriber.on('audioLevelUpdated', (e) => {
-              document.getElementById('subscriber-level').innerText = `${subscriber.id} ${e.audioLevel}`;
-
-              // Update Audio Level to OT Speech
-              otSpeech.addAudioLevel(subscriber.id, e.audioLevel);
+              audioLevels[subscriber.id] = {
+                audioLevel: e.audioLevel,
+                channel: subscriber,
+              };
             });
 
             // Adjust Layout
@@ -151,24 +158,15 @@
         }
         layout();
 
-        // Check if self is active speaker
-        if (cameraPublisher != null) {
-          let shouldEnableAudio = false;
-          let shouldEnableVideo = false;
-          document.body.classList.add('notactive');
-          for (let i = 0; i < Math.min(numberOfActiveSpeakers, updatedSpeakers.length); i += 1) {
-            const speaker = updatedSpeakers[i];
-            if (speaker.id === cameraPublisher.id) {
-              // Self is active speaker
-              document.body.classList.add('active');
-
-              shouldEnableAudio = !forceAudioOff;
-              shouldEnableVideo = !forceVideoOff;
-              break;
+        for (let i = 0; i < updatedSpeakers.length; i += 1) {
+          const speaker = updatedSpeakers[i];
+          if (!speaker.isSelf) {
+            if (i < numberOfActiveSpeakers) {
+              speaker.subscriber.subscribeToVideo(true);
+            } else {
+              speaker.subscriber.subscribeToVideo(false);
             }
           }
-          cameraPublisher.publishAudio(shouldEnableAudio);
-          cameraPublisher.publishVideo(shouldEnableVideo);
         }
       }
       
@@ -180,8 +178,6 @@
             publishVideo: true,
             fitMode: 'contain',
             insertMode: 'append',
-            width: 640,
-            height: 480,
           }, (error) => {
             if (error) {
               handleError(error);
@@ -193,10 +189,11 @@
 
             // Get Audio Level
             cameraPublisher.on('audioLevelUpdated', (e) => {
+              audioLevels[cameraPublisher.id] = {
+                audioLevel: e.audioLevel,
+                channel: cameraPublisher,
+              };
               document.getElementById('publisher-level').innerText = `${cameraPublisher.id} (self) ${e.audioLevel}`;
-
-              // Update Audio Level to OT Speech
-              otSpeech.addAudioLevel(cameraPublisher.id, e.audioLevel);
             });
             
             OTSession.publish(cameraPublisher, (err) => {
@@ -232,24 +229,14 @@
         const checkbox = document.getElementById('audioDisabled');
         forceAudioOff = checkbox.checked;
         const shouldEnableAudio = !forceAudioOff;
-
-        document.body.classList.add('notactive');
-        if (otSpeech.isSelfActiveSpeaker() && cameraPublisher != null) {
-          cameraPublisher.publishAudio(shouldEnableAudio);
-          document.body.classList.add('active');
-        }
+        cameraPublisher.publishAudio(shouldEnableAudio);
       }
 
       function toggleVideoDisable(e) {
         const checkbox = document.getElementById('videoDisabled');
         forceVideoOff = checkbox.checked;
         const shouldEnableVideo = !forceVideoOff;
-
-        document.body.classList.add('notactive');
-        if (otSpeech.isSelfActiveSpeaker() && cameraPublisher != null) {
-          cameraPublisher.publishVideo(shouldEnableVideo);
-          document.body.classList.add('active');
-        }
+        cameraPublisher.publishVideo(shouldEnableVideo);
       }
 
     </script>
