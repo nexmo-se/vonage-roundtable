@@ -1,9 +1,13 @@
 OTSpeech = (options) => {
   const config = Object.assign({
-    movingAverageCount: 100,
-    consecutiveVoiceMs: 100,
-    consecutiveSilenceMs: 300,
-    numberOfActiveSpeakers: 2,
+    numberOfActiveSpeakers: 2, // Maximum Number of Active Speaker (which video should be shown)
+
+    voiceThreshold: 0.5, // Threshold for Voice Detection
+    consecutiveVoiceMs: 100, // Minimum amount of consecutive voice (ms) before the speaker is considered in a speech
+    consecutiveSilenceMs: 300, // Minimum amount of consecutive silence (ms) before speaker is considered out of speech
+
+    audioLevelPreviousWeight: 0.7, // previous value weightage for moving average computation
+    audioLevelCurrentWeight: 0.3, // current value weightage for moving average computation
   }, options);
 
   const channels = {};
@@ -13,7 +17,7 @@ OTSpeech = (options) => {
   const isVoice = (maLevel) => {
     let logLevel = (Math.log(maLevel) / Math.LN10) / 1.5 + 1;
     logLevel = Math.min(Math.max(logLevel, 0), 1);
-    return logLevel > 0.5;
+    return logLevel > config.voiceThreshold;
   };
 
   const getOrderedChannels = () => Object.keys(channels)
@@ -72,7 +76,7 @@ OTSpeech = (options) => {
     if (previousMovingAverage == null || previousMovingAverage <= currentAudioLevel) {
       return currentAudioLevel;
     } else {
-      return 0.7 * previousMovingAverage + 0.3 * currentAudioLevel;
+      return (config.audioLevelPreviousWeight * previousMovingAverage) + (config.audioLevelCurrentWeight * currentAudioLevel);
     }
   };
 
