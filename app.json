@@ -1,0 +1,21 @@
+{
+  "name": "Simple Opentok Audio Level",
+  "description": "A simple Opentok Audio Level application",
+  "repository": "https://github.com/nexmo-se/simple-opentok-audio-level",
+  "logo": "https://node-js-sample.herokuapp.com/node.png",
+  "addons": [],
+  "env": {
+    "API_KEY": {
+      "desription": "Opentok API Key",
+      "required": true
+    },
+    "API_SECRET" : {
+      "description": "Opentok API Secret",
+      "required": true
+    },
+    "SESSION_ID": {
+      "description": "Session Id to be used in application",
+      "required": true
+    }
+  }
+}

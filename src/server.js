@@ -11,6 +11,7 @@ const OpenTok = require('opentok');
 const port = process.env.PORT || 8080;
 const apiKey = process.env.API_KEY;
 const apiSecret = process.env.API_SECRET;
+const sessionId = process.env.SESSION_ID;
 
 const client = new OpenTok(apiKey, apiSecret);
 
@@ -31,7 +32,6 @@ app.get('/success', (_, res) => res.send('You have successfully deployed the Sim
 
 app.get('/token', async (req, res, next) => {
   try {
-    const { sessionId } = req.query;
     const token = client.generateToken(sessionId);
     res.json({
       apiKey,

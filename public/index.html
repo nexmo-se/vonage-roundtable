@@ -49,7 +49,6 @@
     </div>
 
     <script>
-      const sessionId = '1_MX40NjQ4MTk4Mn5-MTYwMjAzOTczMTI3M353THJlNUVWRC9lMnhuY3FrZHhOaENuUTR-fg';
       const numberOfActiveSpeakers = 2;
 
       const otSpeech = OTSpeech({ numberOfActiveSpeakers });
@@ -73,9 +72,9 @@
         console.log(error);
       }
 
-      async function getCredentials(sessionId) {
+      async function getCredentials() {
         try {
-          const url = `/token?sessionId=${sessionId}`;
+          const url = `/token`;
           const response = await fetch(url);
           const data = await response.json();
           return Promise.resolve(data);
@@ -94,8 +93,8 @@
           document.getElementById('name').disabled = true;
 
           // Get Credentials
-          const credentials = await getCredentials(sessionId);
-          const { apiKey, token } = credentials;
+          const credentials = await getCredentials();
+          const { apiKey, sessionId, token } = credentials;
 
           setInterval(() => {
             const keys = Object.keys(audioLevels);
