@@ -248,8 +248,10 @@ OTSpeech = (options) => {
 
   const setNumberOfActiveSpeakers = (value) => {
     console.log(`Setting Number of Active Speakers to ${value}`);
-    config.numberOfActiveSpeakers = value;
+    config.numberOfActiveSpeakers = parseInt(value, 10);
   };
+
+  const getNumberOfActiveSpeakers = () => config.numberOfActiveSpeakers;
 
   return {
     addAudioLevel,
@@ -259,6 +261,7 @@ OTSpeech = (options) => {
     isSelfActiveSpeaker,
     setSpeakerPin,
     setNumberOfActiveSpeakers,
+    getNumberOfActiveSpeakers,
 
     addPublisher,
     removePublisher,

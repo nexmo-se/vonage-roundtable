@@ -230,7 +230,7 @@
 
         // Show non-self active speakers
         const nonSelfSpeakers = updatedSpeakers.filter(speaker => !speaker.isSelf);
-        const availableActiveSpeakers = Math.min(nonSelfSpeakers.length, numberOfActiveSpeakers);
+        const availableActiveSpeakers = Math.min(nonSelfSpeakers.length, otSpeech.getNumberOfActiveSpeakers());
         for (let i = 0; i < availableActiveSpeakers; i += 1) {
           const speaker = nonSelfSpeakers[i];
           const speakerElement = document.getElementById(speaker.id);
@@ -241,7 +241,7 @@
         // Subscribe/Unsubscribe to non-self videos
         for (let i = 0; i < nonSelfSpeakers.length; i += 1) {
           const speaker = nonSelfSpeakers[i];
-          const shouldSubscribeToVideo = i < numberOfActiveSpeakers;
+          const shouldSubscribeToVideo = i < otSpeech.getNumberOfActiveSpeakers();
           speaker.subscriber.subscribeToVideo(shouldSubscribeToVideo);
         }
       }
