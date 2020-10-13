@@ -18,18 +18,24 @@ OTSpeech = (options) => {
 
   const getOrderedChannels = () => Object.keys(channels)
     .sort((a, b) => {
-      if (a.inSpeech && b.inSpeech) {
-        if (a.speechStart !== b.speechStart) {
+      if (channels[a].pinned && !(channels[b].pinned)) {
+        // Pinned speaker A is in front
+        return -1;
+      } else if (!(channels[a].pinned) && channels[b].pinned) {
+        // Pinned speaker B is in front
+        return 1;
+      } else if (channels[a].inSpeech && channels[b].inSpeech) {
+        if (channels[a].speechStart !== channels[b].speechStart) {
           // Whichever starts first in front
-          return a.speechStart - b.speechStart;
+          return channels[a].speechStart - channels[b].speechStart;
         } else {
           // Both starts at the same time, compare moving average audio level
           return channels[b].movingAverageAudioLevel - channels[a].movingAverageAudioLevel; // Order from largest to smallest
         }
-      } else if (a.inSpeech && !(b.inSpeech)) {
+      } else if (channels[a].inSpeech && !(channels[b].inSpeech)) {
         // B behind A
         return -1;
-      } else if (!(a.inSpeech) && b.inSpeech) {
+      } else if (!(channels[a].inSpeech) && channels[b].inSpeech) {
         // A behind B
         return 1;
       } else {
@@ -190,6 +196,7 @@ OTSpeech = (options) => {
       speechStartTest: 0,
       speechEndTest: 0,
       inSpeech: false,
+      pinned: false,
     }
   };
 
@@ -225,6 +232,12 @@ OTSpeech = (options) => {
 
   const getChannels = () => channels;
 
+  const setSpeakerPin = (channelId, pinned) => {
+    if (channels[channelId] != null) {
+      channels[channelId].pinned = pinned;
+    }
+  };
+
   const setOnActiveSpeakerChangeListener = (listener) => {
     onActiveSpeakerChangeListener = listener;
   };
@@ -235,6 +248,7 @@ OTSpeech = (options) => {
     getOrderedChannels,
     setOnActiveSpeakerChangeListener,
     isSelfActiveSpeaker,
+    setSpeakerPin,
 
     addPublisher,
     removePublisher,
