@@ -10,9 +10,9 @@ Simple Opentok Audio Level Sample
 ### Setup (Heroku)
 [![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/nexmo-se/simple-opentok-audio-level)
 
-Using the application
+# Using the application
 
-#### UI Usage
+### UI Usage
 Load the page using your browser and start using
 
 1. Fill in your Display Name.
