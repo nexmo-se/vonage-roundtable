@@ -178,7 +178,7 @@
           if (speaker.type === 'subscriber') {
             name = (speaker.subscriber.stream || {}).name;
           } else if (speaker.type === 'publisher') {
-            name = 'Myself'
+            name = `${document.getElementById('name').value} (self)`;
           }
 
           return name;
