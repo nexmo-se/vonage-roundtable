@@ -2,7 +2,7 @@ OTSpeech = (options) => {
   const config = Object.assign({
     numberOfActiveSpeakers: 2, // Maximum Number of Active Speaker (which video should be shown)
 
-    voiceThreshold: 0.5, // Threshold for Voice Detection
+    voiceLevelThreshold: 0.5, // Threshold for Voice Detection
     consecutiveVoiceMs: 100, // Minimum amount of consecutive voice (ms) before the speaker is considered in a speech
     consecutiveSilenceMs: 300, // Minimum amount of consecutive silence (ms) before speaker is considered out of speech
 
@@ -17,7 +17,7 @@ OTSpeech = (options) => {
   const isVoice = (maLevel) => {
     let logLevel = (Math.log(maLevel) / Math.LN10) / 1.5 + 1;
     logLevel = Math.min(Math.max(logLevel, 0), 1);
-    return logLevel > config.voiceThreshold;
+    return logLevel > config.voiceLevelThreshold;
   };
 
   const getOrderedChannels = () => Object.keys(channels)
@@ -253,6 +253,11 @@ OTSpeech = (options) => {
 
   const getNumberOfActiveSpeakers = () => config.numberOfActiveSpeakers;
 
+  const setVoiceLevelThreshold = (value) => {
+    console.log(`Setting Voice Level Threshold to ${value}`);
+    config.voiceLevelThreshold = parseFloat(value);
+  };
+
   return {
     addAudioLevel,
     getChannels,
@@ -262,6 +267,7 @@ OTSpeech = (options) => {
     setSpeakerPin,
     setNumberOfActiveSpeakers,
     getNumberOfActiveSpeakers,
+    setVoiceLevelThreshold,
 
     addPublisher,
     removePublisher,
