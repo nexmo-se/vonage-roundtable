@@ -6,14 +6,23 @@
     <script src="audioLevel.js"></script>
 
     <style>
+      .noshow { display: none; }
     </style>
   </head>
-  <body>
-    <div style="margin-left: 16px; margin-right: 16px; display: flex; flex-direction: column;">
+  <body style="display: flex; flex-direction: row; width: 100%; height: 100vh;">
+    <div id="layoutContainer" style="position: relative; display: flex; flex: 1; height:  100vh"></div>
+    <div id="publisherContainer" style="display: none"></div>
+
+    <div style="position: relative; left: 0; top: 0; padding: 16px; display: flex; flex-direction: column; background-color: white; width: 300px;">
       <div id="session-control" style="margin-bottom: 16px;">
         <button onclick="initializeSession()">Connect</button>
       </div>
-      
+
+      <div style="margin-bottom: 16px;">
+        <label for="name">Display Name</label>
+        <input type="text" id="name" />
+      </div>
+
       <div style="margin-bottom: 16px;">
         <button onclick="startCamera()">Publish Camera</button>
         <button onclick="stopCamera()">Unpublish Camera</button>
@@ -33,13 +42,13 @@
       <div id="subscriber-level" style="margin-bottom: 16px; display: none;">
 
       </div>
+
+      <div>Available Speakers (Check to Pin)</div>
+      <div id="speaker-list" style="margin-bottom: 16px; padding: 16px; border: 1px solid #000"></div>
       
-      <div>Ordered Audio Level</div>
+      <div>Ordered Speaker Activeness</div>
       <div id="ordered-level" style="margin-bottom: 16px; padding: 16px; border: 1px solid #000"></div>
     </div>
-    
-    <div id="layoutContainer" style="position: relative; display: flex; flex: 1; height:  100vh"></div>
-    <div id="publisherContainer" style="display: none"></div>
 
     <script>
       let OTSession;
@@ -65,119 +74,176 @@
         console.log(error);
       }
 
-      function initializeSession() {
-        const apiKey = '46481982';
-        const sessionId = '1_MX40NjQ4MTk4Mn5-MTYwMjAzOTczMTI3M353THJlNUVWRC9lMnhuY3FrZHhOaENuUTR-fg';
-        const token = 'T1==cGFydG5lcl9pZD00NjQ4MTk4MiZzaWc9YTNiYjkyN2Q4ZDczNWVmYTEwOGM0MmVlNDQ1MjAwNTBkMjg3ZWI1ZjpzZXNzaW9uX2lkPTFfTVg0ME5qUTRNVGs0TW41LU1UWXdNakF6T1Rjek1USTNNMzUzVEhKbE5VVldSQzlsTW5odVkzRnJaSGhPYUVOdVVUUi1mZyZjcmVhdGVfdGltZT0xNjAyNTUzNzM4Jm5vbmNlPTAuNjY3NTQ0MDAxMzkwMjc0MyZyb2xlPXB1Ymxpc2hlciZleHBpcmVfdGltZT0xNjAyNjQwMTM4JmluaXRpYWxfbGF5b3V0X2NsYXNzX2xpc3Q9';
+      async function getCredentials(sessionId) {
+        try {
+          const url = `/token?sessionId=${sessionId}`;
+          const response = await fetch(url);
+          const data = await response.json();
+          return Promise.resolve(data);
+        } catch (error) {
+          return Promise.reject(error);
+        }
+      }
 
-        setInterval(() => {
-          const keys = Object.keys(audioLevels);
-          for (let i = 0; i < keys.length; i += 1) {
-            const key = keys[i];
-            const { channel, audioLevel } = audioLevels[key];
+      async function initializeSession() {
+        try {
+          const sessionId = '1_MX40NjQ4MTk4Mn5-MTYwMjAzOTczMTI3M353THJlNUVWRC9lMnhuY3FrZHhOaENuUTR-fg';
+          const credentials = await getCredentials(sessionId);
+          const { apiKey, token } = credentials;
 
-            // Update Audio Level to OT Speech
-            otSpeech.addAudioLevel(channel.id, audioLevel);
-          }
-        }, 100);
+          setInterval(() => {
+            const keys = Object.keys(audioLevels);
+            for (let i = 0; i < keys.length; i += 1) {
+              const key = keys[i];
+              const { channel, audioLevel } = audioLevels[key];
 
-        OTSession = OT.initSession(apiKey, sessionId);
-        console.log('Session Created');
-        
-        OTSession.on('streamCreated', (event) => {
-          const subscriber = OTSession.subscribe(event.stream, 'layoutContainer', {
-            insertMode: 'append',
-            fitMode: 'contain',
-            width: 640,
-            height: 480,
-          }, (error) => {
-            if (error) {
-              return handleError(error);
+              // Update Audio Level to OT Speech
+              otSpeech.addAudioLevel(channel.id, audioLevel);
             }
+          }, 100);
 
-            // Add Subscriber to OT Speech
-            otSpeech.addSubscriber(subscriber);
+          OTSession = OT.initSession(apiKey, sessionId);
+          console.log('Session Created');
 
-            // Get Audio Level
-            subscriber.on('audioLevelUpdated', (e) => {
-              audioLevels[subscriber.id] = {
-                audioLevel: e.audioLevel,
-                channel: subscriber,
-              };
+          OTSession.on('streamCreated', (event) => {
+            const subscriber = OTSession.subscribe(event.stream, 'layoutContainer', {
+              insertMode: 'append',
+              fitMode: 'contain',
+              nameDisplayMode : 'on',
+              width: 640,
+              height: 480,
+            }, (error) => {
+              if (error) {
+                return handleError(error);
+              }
+
+              // Add Subscriber to OT Speech
+              otSpeech.addSubscriber(subscriber);
+
+              // Get Audio Level
+              subscriber.on('audioLevelUpdated', (e) => {
+                audioLevels[subscriber.id] = {
+                  audioLevel: e.audioLevel,
+                  channel: subscriber,
+                };
+              });
+
+              // Adjust Layout
+              layout();
             });
+            
+            console.log(`Received Stream at ${event.stream.videoDimensions.width}x${event.stream.videoDimensions.height}`);
+          });
+
+          OTSession.on('streamDestroyed', (event) => {
+            console.log('Stream Destroyed');
+
+            // Remove Subscriber from OT Speech
+            otSpeech.removeSubscriberByStreamId(event.stream.id);
 
             // Adjust Layout
             layout();
           });
-          
-          console.log(`Received Stream at ${event.stream.videoDimensions.width}x${event.stream.videoDimensions.height}`);
-        });
 
-        OTSession.on('streamDestroyed', (event) => {
-          console.log('Stream Destroyed');
+          OTSession.connect(token, (error) => {
+            if (error) {
+              handleError(error);
+              alert(error.message);
+              return;
+            }
+            
+            console.log('Session Ready');
+            document.getElementById('session-control').hidden = true
+          });
 
-          // Remove Subscriber from OT Speech
-          otSpeech.removeSubscriberByStreamId(event.stream.id);
-
-          // Adjust Layout
-          layout();
-        });
+          return Promise.resolve();
+        } catch (error) {
+          alert(error.message);
+          return Promise.resolve();
+        }
         
-        OTSession.connect(token, (error) => {
-          if (error) {
-            handleError(error);
-            alert(error.message);
-            return;
-          }
-          
-          console.log('Session Ready');
-          document.getElementById('session-control').hidden = true
-        });
       }
 
       function onSpeakerOrderChanged(updatedSpeakers) {
         const orderedLevel = document.getElementById('ordered-level');
-        orderedLevel.innerText = updatedSpeakers.map(speaker => `${speaker.id}${speaker.isSelf ? ' (self)' : ''}`).join('\n');
+        orderedLevel.innerText = updatedSpeakers.map(speaker => {
+          let name = 'Unknown';
+          if (speaker.type === 'subscriber') {
+            name = (speaker.subscriber.stream || {}).name;
+          } else if (speaker.type === 'publisher') {
+            name = 'Myself'
+          }
 
-        // Clear all Big classes
+          return name;
+        }).join('\n');
+
+        const speakerElements = updatedSpeakers.filter(speaker => !(speaker.isSelf))
+          .sort((a, b) => (a.subscriber.stream || {}).name.toLowerCase() < (b.subscriber.stream || {}).name.toLowerCase() ? -1 : 1)
+          .map((speaker) => {
+            const speakerElement = document.createElement('div');
+
+            const checkboxElement = document.createElement('input');
+            checkboxElement.type = 'checkbox';
+            checkboxElement.checked = speaker.pinned;
+            checkboxElement.onchange = () => otSpeech.setSpeakerPin(speaker.id, checkboxElement.checked);
+
+            const labelElement = document.createElement('label');
+            labelElement.innerText = ((speaker.subscriber.stream) || {}).name || speaker.id;
+
+            speakerElement.appendChild(checkboxElement);
+            speakerElement.appendChild(labelElement);
+
+            return speakerElement;
+          });
+
+        const speakerListElement = document.getElementById('speaker-list');
+        speakerListElement.innerHTML = '';
+        for (let i = 0; i < speakerElements.length; i += 1) {
+          const speakerElement = speakerElements[i];
+          speakerListElement.appendChild(speakerElement);
+        }
+
+        // Stop showing everyone
         const children = layoutContainer.childNodes;
         for (let i = 0; i < children.length; i += 1) {
           const childElement = children[i];
-          childElement.classList.remove('big');
+          childElement.classList.add('noshow');
         }
 
-        // Set Big class for Active Speaker
-        for (let i = 0; i < numberOfActiveSpeakers; i += 1) {
-          if (i < updatedSpeakers.length) {
-            const speaker = updatedSpeakers[i];
-            const speakerElement = document.getElementById(speaker.id);
-            if (!(speaker.isSelf)) {
-              speakerElement.classList.add('big');
-            }
-          }
+        // Show non-self speakers
+        const nonSelfSpeakers = updatedSpeakers.filter(speaker => !speaker.isSelf);
+        const availableActiveSpeakers = Math.min(nonSelfSpeakers.length, numberOfActiveSpeakers);
+        for (let i = 0; i < availableActiveSpeakers; i += 1) {
+          const speaker = nonSelfSpeakers[i];
+          const speakerElement = document.getElementById(speaker.id);
+          speakerElement.classList.remove('noshow');
         }
         layout();
 
-        for (let i = 0; i < updatedSpeakers.length; i += 1) {
-          const speaker = updatedSpeakers[i];
-          if (!speaker.isSelf) {
-            if (i < numberOfActiveSpeakers) {
-              speaker.subscriber.subscribeToVideo(true);
-            } else {
-              speaker.subscriber.subscribeToVideo(false);
-            }
-          }
+        // Subscribe/Unsubscribe to non-self Videos
+        for (let i = 0; i < nonSelfSpeakers.length; i += 1) {
+          const speaker = nonSelfSpeakers[i];
+          const shouldSubscribeToVideo = i < numberOfActiveSpeakers;
+          speaker.subscriber.subscribeToVideo(shouldSubscribeToVideo);
         }
       }
       
       async function startCamera() {
         stopCamera();
         try {
+          const name = document.getElementById('name').value;
+          if (name == null || name === '') {
+            alert('Please provide a name');
+            return;
+          }
+
           cameraPublisher = OT.initPublisher('publisherContainer', {
             publishAudio: true,
             publishVideo: true,
             fitMode: 'contain',
             insertMode: 'append',
+            name,
+            style: { nameDisplayMode: "off" }
           }, (error) => {
             if (error) {
               handleError(error);
@@ -193,7 +259,7 @@
                 audioLevel: e.audioLevel,
                 channel: cameraPublisher,
               };
-              document.getElementById('publisher-level').innerText = `${cameraPublisher.id} (self) ${e.audioLevel}`;
+              document.getElementById('publisher-level').innerText = `My Audio Level: ${e.audioLevel}`;
             });
             
             OTSession.publish(cameraPublisher, (err) => {
