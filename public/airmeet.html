@@ -10,25 +10,26 @@
     </style>
   </head>
   <body style="display: flex; flex-direction: row; width: 100%; height: 100vh;">
-    <div id="layoutContainer" style="position: relative; display: flex; flex: 1; height:  100vh"></div>
+    <div id="layoutContainer" style="position: relative; display: flex; flex: 1; height: 100vh"></div>
     <div id="publisherContainer" style="display: none"></div>
 
     <div style="position: relative; left: 0; top: 0; padding: 16px; display: flex; flex-direction: column; background-color: white; width: 300px;">
-      <div id="session-control" style="margin-bottom: 16px;">
-        <button onclick="initializeSession()">Connect</button>
-      </div>
 
       <div style="margin-bottom: 16px;">
         <label for="name">Display Name</label>
         <input type="text" id="name" />
       </div>
 
-      <div style="margin-bottom: 16px;">
-        <button onclick="startCamera()">Publish Camera</button>
-        <button onclick="stopCamera()">Unpublish Camera</button>
+      <div id="session-control" style="margin-bottom: 16px;">
+        <button onclick="initializeSession()">Connect to Session</button>
       </div>
 
-      <div style="margin-bottom: 16px;">
+      <div id="publisher-control" style="margin-bottom: 16px;" hidden>
+        <button id="publish-camera" onclick="startCamera()">Publish Camera</button>
+        <button id="unpublish-camera" onclick="stopCamera()" disabled>Unpublish Camera</button>
+      </div>
+
+      <div id="av-control" style="margin-bottom: 16px;" hidden>
         <input type="checkbox" id="audioDisabled" onchange="toggleAudioDisable()"/>
         <label for="audioDisabled">Disable Audio</label>
 
@@ -36,12 +37,7 @@
         <label for="videoDisabled">Disable Video</label>
       </div>
 
-      <div id="publisher-level" style="margin-bottom: 16px; color: red;">
-
-      </div>
-      <div id="subscriber-level" style="margin-bottom: 16px; display: none;">
-
-      </div>
+      <div id="publisher-level" style="margin-bottom: 16px; color: red;"></div>
 
       <div>Available Speakers (Check to Pin)</div>
       <div id="speaker-list" style="margin-bottom: 16px; padding: 16px; border: 1px solid #000"></div>
@@ -51,12 +47,13 @@
     </div>
 
     <script>
-      let OTSession;
+      const sessionId = '1_MX40NjQ4MTk4Mn5-MTYwMjAzOTczMTI3M353THJlNUVWRC9lMnhuY3FrZHhOaENuUTR-fg';
       const numberOfActiveSpeakers = 2;
 
       const otSpeech = OTSpeech({ numberOfActiveSpeakers });
       otSpeech.setOnActiveSpeakerChangeListener(onSpeakerOrderChanged);
       
+      let OTSession;
       let cameraPublisher = null;
       let forceAudioOff = false;
       let forceVideoOff = false;
@@ -87,7 +84,14 @@
 
       async function initializeSession() {
         try {
-          const sessionId = '1_MX40NjQ4MTk4Mn5-MTYwMjAzOTczMTI3M353THJlNUVWRC9lMnhuY3FrZHhOaENuUTR-fg';
+          const name = document.getElementById('name').value;
+          if (name == null || name === '') {
+            alert('Please provide a name');
+            return;
+          }
+          document.getElementById('name').disabled = true;
+
+          // Get Credentials
           const credentials = await getCredentials(sessionId);
           const { apiKey, token } = credentials;
 
@@ -153,7 +157,8 @@
             }
             
             console.log('Session Ready');
-            document.getElementById('session-control').hidden = true
+            document.getElementById('session-control').hidden = true;
+            document.getElementById('publisher-control').hidden = false;
           });
 
           return Promise.resolve();
@@ -165,6 +170,7 @@
       }
 
       function onSpeakerOrderChanged(updatedSpeakers) {
+        // Fill Ordered Speaker list
         const orderedLevel = document.getElementById('ordered-level');
         orderedLevel.innerText = updatedSpeakers.map(speaker => {
           let name = 'Unknown';
@@ -177,16 +183,19 @@
           return name;
         }).join('\n');
 
+        // Fill Available Speaker List
         const speakerElements = updatedSpeakers.filter(speaker => !(speaker.isSelf))
           .sort((a, b) => (a.subscriber.stream || {}).name.toLowerCase() < (b.subscriber.stream || {}).name.toLowerCase() ? -1 : 1)
           .map((speaker) => {
             const speakerElement = document.createElement('div');
 
+            // Checkbox
             const checkboxElement = document.createElement('input');
             checkboxElement.type = 'checkbox';
             checkboxElement.checked = speaker.pinned;
             checkboxElement.onchange = () => otSpeech.setSpeakerPin(speaker.id, checkboxElement.checked);
 
+            // Checkbox Label
             const labelElement = document.createElement('label');
             labelElement.innerText = ((speaker.subscriber.stream) || {}).name || speaker.id;
 
@@ -195,7 +204,6 @@
 
             return speakerElement;
           });
-
         const speakerListElement = document.getElementById('speaker-list');
         speakerListElement.innerHTML = '';
         for (let i = 0; i < speakerElements.length; i += 1) {
@@ -203,14 +211,14 @@
           speakerListElement.appendChild(speakerElement);
         }
 
-        // Stop showing everyone
+        // Hide everyone
         const children = layoutContainer.childNodes;
         for (let i = 0; i < children.length; i += 1) {
           const childElement = children[i];
           childElement.classList.add('noshow');
         }
 
-        // Show non-self speakers
+        // Show non-self active speakers
         const nonSelfSpeakers = updatedSpeakers.filter(speaker => !speaker.isSelf);
         const availableActiveSpeakers = Math.min(nonSelfSpeakers.length, numberOfActiveSpeakers);
         for (let i = 0; i < availableActiveSpeakers; i += 1) {
@@ -220,7 +228,7 @@
         }
         layout();
 
-        // Subscribe/Unsubscribe to non-self Videos
+        // Subscribe/Unsubscribe to non-self videos
         for (let i = 0; i < nonSelfSpeakers.length; i += 1) {
           const speaker = nonSelfSpeakers[i];
           const shouldSubscribeToVideo = i < numberOfActiveSpeakers;
@@ -236,6 +244,7 @@
             alert('Please provide a name');
             return;
           }
+          document.getElementById('publish-camera').disabled = true;
 
           cameraPublisher = OT.initPublisher('publisherContainer', {
             publishAudio: true,
@@ -262,6 +271,7 @@
               document.getElementById('publisher-level').innerText = `My Audio Level: ${e.audioLevel}`;
             });
             
+            // Publish to Session
             OTSession.publish(cameraPublisher, (err) => {
               if (err) {
                 handleError(error);
@@ -271,7 +281,8 @@
               // Adjust Layout
               layout();
 
-              setTimeout(() => console.log(`StreamID: ${cameraPublisher.streamId}`), 5000);
+              document.getElementById('unpublish-camera').disabled = false;
+              document.getElementById('av-control').hidden = false;
             })
           });
         } catch (error) {
@@ -289,6 +300,10 @@
 
           layout();
         }
+
+        document.getElementById('publish-camera').disabled = false;
+        document.getElementById('unpublish-camera').disabled = true;
+        document.getElementById('av-control').hidden = true;
       }
 
       function toggleAudioDisable(e) {
