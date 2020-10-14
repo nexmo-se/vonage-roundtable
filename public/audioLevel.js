@@ -3,8 +3,8 @@ OTSpeech = (options) => {
     numberOfActiveSpeakers: 2, // Maximum Number of Active Speaker (which video should be shown)
 
     voiceLevelThreshold: 0.5, // Threshold for Voice Detection
-    consecutiveVoiceMs: 100, // Minimum amount of consecutive voice (ms) before the speaker is considered in a speech
-    consecutiveSilenceMs: 300, // Minimum amount of consecutive silence (ms) before speaker is considered out of speech
+    consecutiveVoiceMs: 1000, // Minimum amount of consecutive voice (ms) before the speaker is considered in a speech
+    consecutiveSilenceMs: 2000, // Minimum amount of consecutive silence (ms) before speaker is considered out of speech
 
     audioLevelPreviousWeight: 0.7, // previous value weightage for moving average computation
     audioLevelCurrentWeight: 0.3, // current value weightage for moving average computation
@@ -113,7 +113,7 @@ OTSpeech = (options) => {
       if (channels[channelId].speechStartTest === 0) {
         // Has not started test for start
         channels[channelId].speechStartTest = currentTime;
-      } else if (channels[channelId].speechStartTest < currentTime + config.consecutiveVoiceMs) {
+      } else if (channels[channelId].speechStartTest + config.consecutiveVoiceMs < currentTime) {
         // Speech started or within speech
         channels[channelId].inSpeech = true;
         channels[channelId].speechStartTest = 0;
@@ -131,7 +131,7 @@ OTSpeech = (options) => {
       if (channels[channelId].speechEndTest === 0) {
         // Has not started test for end
         channels[channelId].speechEndTest = currentTime;
-      } else if (channels[channelId.speechEndTest] < currentTime + config.consecutiveSilenceMs) {
+      } else if (channels[channelId].speechEndTest + config.consecutiveSilenceMs < currentTime) {
         // Speech ended
         channels[channelId].inSpeech = false;
         channels[channelId].speechEndTest = 0;
