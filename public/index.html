@@ -168,6 +168,9 @@
             console.log('Session Ready');
             document.getElementById('session-control').hidden = true;
             document.getElementById('publisher-control').hidden = false;
+
+            // Automatically start publishing camera
+            startCamera();
           });
 
           return Promise.resolve();
