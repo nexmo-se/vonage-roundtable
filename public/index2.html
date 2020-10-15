@@ -1,4 +1,3 @@
-
 <html>
   <head>
     <title>Simple Audio Level</title>
@@ -7,7 +6,10 @@
     <script src="https://cdn.jsdelivr.net/npm/opentok-layout-js@3.7.1/opentok-layout.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
     <script src="audioLevel.js"></script>
-    <script src="layout.js"></script>
+
+    <style>
+      .noshow { display: none; }
+    </style>
   </head>
   <body style="display: flex; flex-direction: row; width: 100%; height: 100vh;">
     <div id="layoutContainer" style="position: relative; display: flex; flex: 1; height: 100vh"></div>
@@ -70,20 +72,23 @@
 
     <script>
       const initialNumberOfActiveSpeakers = 2;
-      const layoutContainer = document.getElementById("layoutContainer");
 
       const otSpeech = OTSpeech({ numberOfActiveSpeakers: initialNumberOfActiveSpeakers });
       otSpeech.setOnActiveSpeakerChangeListener(onSpeakerOrderChanged);
-
-      const { adjustLayout } = OTLayout(layoutContainer);
-
-
+      
       let OTSession;
       let cameraPublisher = null;
       let forceAudioOff = false;
       let forceVideoOff = false;
 
       const audioLevels = {};
+
+      const layoutContainer = document.getElementById("layoutContainer");
+      const layout = initLayoutContainer(layoutContainer, {
+        fixedRatio: false,
+        bigFixedRatio: false,
+        bigClass: "big",
+      }).layout;
 
       function handleError(error) {
         console.log(error);
@@ -149,6 +154,9 @@
                   channel: subscriber,
                 };
               });
+
+              // Adjust Layout
+              layout();
             });
             
             console.log(`Received Stream at ${event.stream.videoDimensions.width}x${event.stream.videoDimensions.height}`);
@@ -159,6 +167,9 @@
 
             // Remove Subscriber from OT Speech
             otSpeech.removeSubscriberByStreamId(event.stream.id);
+
+            // Adjust Layout
+            layout();
           });
 
           OTSession.connect(token, (error) => {
@@ -225,9 +236,22 @@
           speakerListElement.appendChild(speakerElement);
         }
 
-        // Position non-self active speakers
+        // Hide everyone
+        const children = layoutContainer.childNodes;
+        for (let i = 0; i < children.length; i += 1) {
+          const childElement = children[i];
+          childElement.classList.add('noshow');
+        }
+
+        // Show non-self active speakers
         const nonSelfSpeakers = updatedSpeakers.filter(speaker => !speaker.isSelf);
-        adjustLayout(positions, otSpeech.getNumberOfActiveSpeakers());
+        const availableActiveSpeakers = Math.min(nonSelfSpeakers.length, otSpeech.getNumberOfActiveSpeakers());
+        for (let i = 0; i < availableActiveSpeakers; i += 1) {
+          const speaker = nonSelfSpeakers[i];
+          const speakerElement = document.getElementById(speaker.id);
+          speakerElement.classList.remove('noshow');
+        }
+        layout();
 
         // Subscribe/Unsubscribe to non-self videos
         for (let i = 0; i < nonSelfSpeakers.length; i += 1) {
@@ -260,8 +284,16 @@
               return;
             }
 
+            // Add Publisher to OT Speech
+            otSpeech.addPublisher(cameraPublisher);
+
             // Get Audio Level
             cameraPublisher.on('audioLevelUpdated', (e) => {
+              audioLevels[cameraPublisher.id] = {
+                audioLevel: e.audioLevel,
+                channel: cameraPublisher,
+              };
+              
               let logLevel = (Math.log(e.audioLevel) / Math.LN10) / 1.5 + 1;
               logLevel = Math.min(Math.max(logLevel, 0), 1);
 
@@ -276,6 +308,9 @@
                 return;
               }
 
+              // Adjust Layout
+              layout();
+
               document.getElementById('unpublish-camera').disabled = false;
               document.getElementById('av-control').hidden = false;
             })
@@ -287,8 +322,13 @@
       
       function stopCamera() {
         if (cameraPublisher != null) {
+          // Rmoeve Publisher from OT Speech
+          otSpeech.removePublisherByStreamId(cameraPublisher.streamId);
+
           OTSession.unpublish(cameraPublisher);
           cameraPublisher = null;
+
+          layout();
         }
 
         document.getElementById('publish-camera').disabled = false;

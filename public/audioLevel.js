@@ -12,9 +12,8 @@ OTSpeech = (options) => {
 
   const channels = {};
   let currentSpeakerOrder = [];
-  let onActiveSpeakerChangeListener = null;
-
   let positions = [];
+  let onActiveSpeakerChangeListener = null;
 
   const isVoice = (maLevel) => {
     let logLevel = (Math.log(maLevel) / Math.LN10) / 1.5 + 1;
@@ -55,53 +54,67 @@ OTSpeech = (options) => {
       isSelf: channels[channelId].type === 'publisher',
     }));
 
-  const checkActiveSpeakerChange = () => {
-    const newSpeakerOrder = getOrderedChannels();
-
-    const newIds = newSpeakerOrder.map(speaker => speaker.id)
-      .slice(0, Math.min(config.numberOfActiveSpeakers, newSpeakerOrder.length));
-    const oldIds = currentSpeakerOrder.map(speaker => speaker.id)
-      .slice(0, Math.min(config.numberOfActiveSpeakers, currentSpeakerOrder.length));
-    const newIdsString = JSON.stringify(newIds);
-    const oldIdsString = JSON.stringify(oldIds);
+  const getPositions = (newSpeakerOrder) => {
+    const size = Math.min(config.numberOfActiveSpeakers, newSpeakerOrder.length);
+    const newIds = newSpeakerOrder.map(speaker => speaker.id).slice(0, size);
 
     const availableSpeakers = Object.assign([], newIds);  // Clone array from new Ids
     const newPositions = availableSpeakers.map(() => null); // Create array of same size with all values as null
+
+    // Find stayed-on speakers to fill in new positions
+    for (let i = 0; i < positions.length; i += 1) {
+      const oldSpeakerId = positions[i];
+      for (let j = 0; j < availableSpeakers.length; j += 1) {
+        // Check if speaker exists
+        if (availableSpeakers[j] === oldSpeakerId) {
+          newPositions[i] = availableSpeakers[j];  // Update new position
+          availableSpeakers[j] = null;  // Mark speaker as unavailable
+          break;
+        }
+      }
+    }
+
+    // Fill remaing speakers
+    const remainingSpeakers = availableSpeakers.filter(speaker => speaker != null);
+    for (let i = 0; i < newPositions.length; i += 1) {
+      if (newPositions[i] == null) {
+        // Find available
+        if (remainingSpeakers.length < 1) {
+          console.error(`No remaining speakers to fill position at position [${i}]`);
+          break;
+        }
+
+        // Fill new position with top remaining speaker
+        const speakerId = remainingSpeakers.shift();
+        newPositions[i] = speakerId;
+      }
+    }
+
+    return newPositions;
+  }
+
+  const checkActiveSpeakerChange = () => {
+    const newSpeakerOrder = getOrderedChannels(); // Get sorted speakers based on speech and moving average audio level
+    const newPositions = getPositions(newSpeakerOrder); // Get updated speaker positions in the grid
+
+    const newSize = Math.min(config.numberOfActiveSpeakers, newSpeakerOrder.length); // Get max length for slice (against max number of active speaker)
+    const oldSize = Math.min(config.numberOfActiveSpeakers, currentSpeakerOrder.length); // Get max length for slice (against max number of active speaker)
+
+    const newIds = newSpeakerOrder.map(speaker => speaker.id).slice(0, newSize).sort(); // Slice and sort to size
+    const oldIds = currentSpeakerOrder.map(speaker => speaker.id).slice(0, oldSize).sort(); // Slice and sort to size
+
+    const newIdsString = JSON.stringify(newIds); // For easy comparison
+    const oldIdsString = JSON.stringify(oldIds); // For easy comparison
+
+    // Run only if there are changes in active speaker list
     if (newIdsString !== oldIdsString) {
-
-      // Find stayed-on speakers to fill in new positions
-      for (let i = 0; i < positions.length; i += 1) {
-        const oldSpeakerId = positions[i];
-        for (let j = 0; j < availableSpeakers.length; j += 1) {
-          // Check if speaker exists
-          if (availableSpeakers[j] === oldSpeakerId) {
-            newPositions[i] = availableSpeakers[j];  // Update new position
-            availableSpeakers[j] = null;  // Mark speaker as unavailable
-            break;
-          }
-        }
-      }
-
-      // Fill remaing speakers
-      const remainingSpeakers = availableSpeakers.filter(speaker => speaker != null);
-      for (let i = 0; i < newPositions.length; i += 1) {
-        if (newPositions[i] == null) {
-          // Find available
-          if (remainingSpeakers.length < 1) {
-            console.error(`No remaining speakers to fill position at position [${i}]`);
-            return;
-          }
-
-          const speakerId = remainingSpeakers.shift();
-          newPositions[i] = speakerId;
-        }
-      }
-
+      // Callback
       if (onActiveSpeakerChangeListener != null) {
         onActiveSpeakerChangeListener(newSpeakerOrder, newPositions);
       }
     }
 
+    // Update position and speaker order
     positions = newPositions;
     currentSpeakerOrder = newSpeakerOrder;
   };
