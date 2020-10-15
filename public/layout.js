@@ -46,7 +46,9 @@ OTLayout = (layoutContainer) => {
 
     // Fill children into position
     const positionedChildren = [];
-    const layoutDimension = layoutDimensions[numberOfActiveSpeakers];
+    const numberOfStreams = Math.min(numberOfActiveSpeakers, positions.length);
+    const layoutDimension = layoutDimensions[numberOfStreams];
+
     for (let i = 0; i < positions.length; i += 1) {
       const speakerId = positions[i];
       for (let j = 0; j < children.length; j += 1) {
