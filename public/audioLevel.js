@@ -309,6 +309,7 @@ OTSpeech = (options) => {
     addAudioLevel,
     getChannels,
     getOrderedChannels,
+    getPositions,
     setOnActiveSpeakerChangeListener,
     isSelfActiveSpeaker,
     setSpeakerPin,

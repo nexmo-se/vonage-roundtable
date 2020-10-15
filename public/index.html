@@ -21,7 +21,7 @@
       </div>
 
       <div id="session-control" style="margin-bottom: 16px;">
-        <button onclick="initializeSession()">Connect to Session</button>
+        <button id="connect" onclick="initializeSession()">Connect to Session</button>
       </div>
 
       <div id="publisher-control" style="margin-bottom: 16px;" hidden>
@@ -98,9 +98,13 @@
 
       async function initializeSession() {
         try {
+          // Disable button
+          document.getElementById("connect").disabled = true;
+
           // Check Display Name sanity
           const name = document.getElementById('name').value;
           if (name == null || name === '') {
+            document.getElementById("connect").disabled = false;
             alert('Please provide a name');
             return;
           }
@@ -219,11 +223,16 @@
           speakerListElement.appendChild(speakerElement);
         }
 
-        // Position non-self active speakers
-        const nonSelfSpeakers = updatedSpeakers.filter(speaker => !speaker.isSelf);
-        adjustLayout(positions, otSpeech.getNumberOfActiveSpeakers());
+        updateLayout();
+      }
 
+      function updateLayout() {
+        // Update Channels and Positions
+        const orderedChannels = otSpeech.getOrderedChannels()
+        adjustLayout(otSpeech.getPositions(orderedChannels), otSpeech.getNumberOfActiveSpeakers());
+        
         // Subscribe/Unsubscribe to non-self videos
+        const nonSelfSpeakers = orderedChannels.filter(speaker => !speaker.isSelf);
         for (let i = 0; i < nonSelfSpeakers.length; i += 1) {
           const speaker = nonSelfSpeakers[i];
           const shouldSubscribeToVideo = i < otSpeech.getNumberOfActiveSpeakers();
@@ -312,6 +321,8 @@
       function changeNumberOfActiveSpeakers() {
         const numberOfActiveSpeakers = document.getElementById('numberOfActiveSpeakers').value;
         otSpeech.setNumberOfActiveSpeakers(numberOfActiveSpeakers);
+
+        updateLayout();
       }
 
       function changeVoiceLevelThresholdText() {
