@@ -59,7 +59,7 @@ OTSpeech = (options) => {
     const newIds = newSpeakerOrder.map(speaker => speaker.id).slice(0, size);
 
     const availableSpeakers = Object.assign([], newIds);  // Clone array from new Ids
-    const newPositions = availableSpeakers.map(() => null); // Create array of same size with all values as null
+    let newPositions = availableSpeakers.map(() => null); // Create array of same size with all values as null
 
     // Find stayed-on speakers to fill in new positions
     for (let i = 0; i < positions.length; i += 1) {
@@ -80,7 +80,6 @@ OTSpeech = (options) => {
       if (newPositions[i] == null) {
         // Find available
         if (remainingSpeakers.length < 1) {
-          console.error(`No remaining speakers to fill position at position [${i}]`);
           break;
         }
 
@@ -90,6 +89,7 @@ OTSpeech = (options) => {
       }
     }
 
+    newPositions = newPositions.filter(newPosition => newPosition != null);
     return newPositions;
   }
 
