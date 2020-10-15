@@ -219,9 +219,7 @@
         for (let i = 0; i < nonSelfSpeakers.length; i += 1) {
           const speaker = nonSelfSpeakers[i];
           const shouldSubscribeToVideo = i < otSpeech.getNumberOfActiveSpeakers();
-          const timeout = shouldSubscribeToVideo ? 0 : 1000;
-
-          setTimeout(() => speaker.subscriber.subscribeToVideo(shouldSubscribeToVideo), timeout);
+          otSpeech.subscribeToVideo(speaker.id, shouldSubscribeToVideo);
         }
 
         

@@ -241,6 +241,7 @@ OTSpeech = (options) => {
   const addSubscriber = (subscriber) => {
     console.log(`Adding Subscriber ${subscriber.id}`);
     channels[subscriber.id] = {
+      id: subscriber.id,
       type: 'subscriber',
       subscriber,
       movingAverageAudioLevel: 0,
@@ -248,6 +249,7 @@ OTSpeech = (options) => {
       speechEndTest: 0,
       inSpeech: false,
       pinned: false,
+      unsubscribeHandle: null,
     }
   };
 
@@ -305,6 +307,21 @@ OTSpeech = (options) => {
     config.voiceLevelThreshold = parseFloat(value);
   };
 
+  const subscribeToVideo = (channelId, shouldSubscribeToVideo) => {
+    if (channels[channelId].unsubscribeHandle != null) {
+      clearTimeout(channels[channelId].unsubscribeHandle);
+      channels[channelId].unsubscribeHandle = null;
+    }
+
+    if (shouldSubscribeToVideo) {
+      channels[channelId].subscriber.subscribeToVideo(true);
+    } else {
+      const handle = setTimeout(() => channels[channelId].subscriber.subscribeToVideo(false), 1000);
+      channels[channelId].unsubscribeHandle = handle;
+    }
+
+  };
+
   return {
     addAudioLevel,
     getChannels,
@@ -326,5 +343,6 @@ OTSpeech = (options) => {
     removeSubscriber,
     removeSubscriberByStreamId,
     getSubscriberByStreamId,
+    subscribeToVideo,
   };
 };
