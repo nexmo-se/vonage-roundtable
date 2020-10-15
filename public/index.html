@@ -4,7 +4,6 @@
     <title>Simple Audio Level</title>
 
     <script src="https://static.opentok.com/v2/js/opentok.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/opentok-layout-js@3.7.1/opentok-layout.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
     <script src="audioLevel.js"></script>
     <script src="layout.js"></script>
@@ -72,16 +71,13 @@
       const initialNumberOfActiveSpeakers = 2;
       const layoutContainer = document.getElementById("layoutContainer");
 
+      const { adjustLayout } = OTLayout(layoutContainer);
       const otSpeech = OTSpeech({ numberOfActiveSpeakers: initialNumberOfActiveSpeakers });
       otSpeech.setOnActiveSpeakerChangeListener(onSpeakerOrderChanged);
-
-      const { adjustLayout } = OTLayout(layoutContainer);
 
 
       let OTSession;
       let cameraPublisher = null;
-      let forceAudioOff = false;
-      let forceVideoOff = false;
 
       const audioLevels = {};
 
@@ -102,6 +98,7 @@
 
       async function initializeSession() {
         try {
+          // Check Display Name sanity
           const name = document.getElementById('name').value;
           if (name == null || name === '') {
             alert('Please provide a name');
@@ -113,6 +110,7 @@
           const credentials = await getCredentials();
           const { apiKey, sessionId, token } = credentials;
 
+          // Set Interval to process audio level (should move to library)
           setInterval(() => {
             const keys = Object.keys(audioLevels);
             for (let i = 0; i < keys.length; i += 1) {
@@ -150,8 +148,6 @@
                 };
               });
             });
-            
-            console.log(`Received Stream at ${event.stream.videoDimensions.width}x${event.stream.videoDimensions.height}`);
           });
 
           OTSession.on('streamDestroyed', (event) => {
@@ -182,8 +178,6 @@
       }
 
       function onSpeakerOrderChanged(updatedSpeakers, positions) {
-        console.log(positions);
-
         // Fill Ordered Speaker list
         const orderedLevel = document.getElementById('ordered-level');
         orderedLevel.innerText = updatedSpeakers.map(speaker => {
@@ -253,6 +247,7 @@
             fitMode: 'contain',
             insertMode: 'append',
             name,
+            resolution: '320x240',
             style: { nameDisplayMode: "off" }
           }, (error) => {
             if (error) {
@@ -265,6 +260,7 @@
               let logLevel = (Math.log(e.audioLevel) / Math.LN10) / 1.5 + 1;
               logLevel = Math.min(Math.max(logLevel, 0), 1);
 
+              // Display on screen
               document.getElementById('publisher-level').innerText = `Raw: ${e.audioLevel}\nLog: ${logLevel.toFixed(2)}`;
               document.getElementById('myVoiceLevel').value = `${logLevel * 100}`;
             });
@@ -298,15 +294,13 @@
 
       function toggleAudioDisable(e) {
         const checkbox = document.getElementById('audioDisabled');
-        forceAudioOff = checkbox.checked;
-        const shouldEnableAudio = !forceAudioOff;
+        const shouldEnableAudio = !checkbox.checked;
         cameraPublisher.publishAudio(shouldEnableAudio);
       }
 
       function toggleVideoDisable(e) {
         const checkbox = document.getElementById('videoDisabled');
-        forceVideoOff = checkbox.checked;
-        const shouldEnableVideo = !forceVideoOff;
+        const shouldEnableVideo = !checkbox.checked;
         cameraPublisher.publishVideo(shouldEnableVideo);
       }
 
