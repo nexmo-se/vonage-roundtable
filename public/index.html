@@ -47,7 +47,6 @@
         oninput="changeNumberOfActiveSpeakersText()" />
 
       <div>My Voice Level</div>
-      <div id="publisher-level" style="margin-bottom: 16px; color: red;"></div>
       <input id="myVoiceLevel" style="margin-bottom: 16px;"
         type="range" min="1" max="100" value="50" class="slider" disabled />
 
@@ -62,9 +61,7 @@
 
       <div>Available Speakers (Check to Pin)</div>
       <div id="speaker-list" style="margin-bottom: 16px; padding: 16px; border: 1px solid #000"></div>
-      
-      <div>Ordered Speaker Activeness</div>
-      <div id="ordered-level" style="margin-bottom: 16px; padding: 16px; border: 1px solid #000"></div>
+
     </div>
 
     <script>
@@ -182,19 +179,6 @@
       }
 
       function onSpeakerOrderChanged(updatedSpeakers, positions) {
-        // Fill Ordered Speaker list
-        const orderedLevel = document.getElementById('ordered-level');
-        orderedLevel.innerText = updatedSpeakers.map(speaker => {
-          let name = 'Unknown';
-          if (speaker.type === 'subscriber') {
-            name = (speaker.subscriber.stream || {}).name;
-          } else if (speaker.type === 'publisher') {
-            name = `${document.getElementById('name').value} (self)`;
-          }
-
-          return name;
-        }).join('\n');
-
         // Fill Available Speaker List
         const speakerElements = updatedSpeakers.filter(speaker => !(speaker.isSelf))
           .sort((a, b) => (a.subscriber.stream || {}).name.toLowerCase() < (b.subscriber.stream || {}).name.toLowerCase() ? -1 : 1)
@@ -229,15 +213,19 @@
       function updateLayout() {
         // Update Channels and Positions
         const orderedChannels = otSpeech.getOrderedChannels()
-        adjustLayout(otSpeech.getPositions(orderedChannels), otSpeech.getNumberOfActiveSpeakers());
         
         // Subscribe/Unsubscribe to non-self videos
         const nonSelfSpeakers = orderedChannels.filter(speaker => !speaker.isSelf);
         for (let i = 0; i < nonSelfSpeakers.length; i += 1) {
           const speaker = nonSelfSpeakers[i];
           const shouldSubscribeToVideo = i < otSpeech.getNumberOfActiveSpeakers();
-          speaker.subscriber.subscribeToVideo(shouldSubscribeToVideo);
+          const timeout = shouldSubscribeToVideo ? 0 : 1000;
+
+          setTimeout(() => speaker.subscriber.subscribeToVideo(shouldSubscribeToVideo), timeout);
         }
+
+        
+        setTimeout(() => adjustLayout(otSpeech.getPositions(orderedChannels), otSpeech.getNumberOfActiveSpeakers()), 1000);
       }
       
       async function startCamera() {
@@ -270,7 +258,6 @@
               logLevel = Math.min(Math.max(logLevel, 0), 1);
 
               // Display on screen
-              document.getElementById('publisher-level').innerText = `Raw: ${e.audioLevel}\nLog: ${logLevel.toFixed(2)}`;
               document.getElementById('myVoiceLevel').value = `${logLevel * 100}`;
             });
             
