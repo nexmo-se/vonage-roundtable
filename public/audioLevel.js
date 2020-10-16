@@ -45,7 +45,23 @@ OTSpeech = (options) => {
         return 1;
       } else {
         // Both also not in speech, compare moving average audio level
-        return channels[b].movingAverageAudioLevel - channels[a].movingAverageAudioLevel; // Order from largest to smallest
+        // return channels[b].movingAverageAudioLevel - channels[a].movingAverageAudioLevel; // Order from largest to smallest
+
+        let aIndex = 1000; // Arbitrary large value, so that it is at the back
+        for (let i = 0; i < currentSpeakerOrder.length; i += 1) {
+          if (currentSpeakerOrder[i].id === a) {
+            aIndex = i;
+          }
+        }
+
+        let bIndex = 1001; // Arbitrary large value, so that it is at the back (larger than A default)
+        for (let i = 0; i < currentSpeakerOrder.length; i += 1) {
+          if (currentSpeakerOrder[i].id === b) {
+            bIndex = i;
+          }
+        }
+
+        return aIndex - bIndex; // Use previous order as sorted order
       }
     })
     .map(channelId => ({
