@@ -46,6 +46,11 @@
         <label for="videoDisabled">Disable Video</label>
       </div>
 
+      <div id="highlight-control" style="margin-bottom: 16px;">
+        <input type="checkbox" id="highlightEnabled" onchange="toggleHighlightEnabled()" checked />
+        <label for="highlightEnabled">Enable Speaker Highlight</label>
+      </div>
+
       <div>
         <span>Maximum Number of Active Speakers:</span>
         <span id="numberOfActiveSpeakersText" style="margin-left: 4px;">2</span>
@@ -77,7 +82,7 @@
       const initialNumberOfActiveSpeakers = 2;
       const layoutContainer = document.getElementById("layoutContainer");
 
-      const { adjustLayout, updateHighlight } = OTLayout(layoutContainer);
+      const { adjustLayout, enableHighlight, updateHighlight } = OTLayout(layoutContainer);
       const otSpeech = OTSpeech({ numberOfActiveSpeakers: initialNumberOfActiveSpeakers });
       otSpeech.setOnActiveSpeakerChangeListener(onSpeakerOrderChanged);
       otSpeech.setOnMostActiveSpeakerChangeListener(onMostActiveSpeakerChanged);
@@ -317,6 +322,12 @@
         const checkbox = document.getElementById('videoDisabled');
         const shouldEnableVideo = !checkbox.checked;
         cameraPublisher.publishVideo(shouldEnableVideo);
+      }
+
+      function toggleHighlightEnabled(e) {
+        const checkbox = document.getElementById('highlightEnabled');
+        const shouldEnableHighlight = checkbox.checked;
+        enableHighlight(shouldEnableHighlight);
       }
 
       function changeNumberOfActiveSpeakersText() {

@@ -32,6 +32,7 @@ OTLayout = (layoutContainer) => {
   layoutContainerElement.style['align-items'] = 'center';
 
   let mostActiveSpeakerId = null;
+  let highlightEnabled = true;
 
   const adjustHighlight = () => {
     const childNodes = layoutContainerElement.childNodes;
@@ -42,10 +43,15 @@ OTLayout = (layoutContainer) => {
       childNode.style.border = null;
 
       // Add border to most active speaker
-      if (childNode.id === mostActiveSpeakerId) {
+      if (highlightEnabled && childNode.id === mostActiveSpeakerId) {
         childNode.style.border = border;
       }
     }
+  }
+
+  const enableHighlight = (enabled) => {
+    highlightEnabled = enabled;
+    adjustHighlight();
   }
 
   const updateHighlight = (speakerId) => {
@@ -111,5 +117,6 @@ OTLayout = (layoutContainer) => {
   return {
     adjustLayout,
     updateHighlight,
+    enableHighlight,
   };
 };
