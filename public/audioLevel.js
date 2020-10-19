@@ -45,7 +45,6 @@ OTSpeech = (options) => {
         return 1;
       } else {
         // Both also not in speech, compare moving average audio level
-        // return channels[b].movingAverageAudioLevel - channels[a].movingAverageAudioLevel; // Order from largest to smallest
 
         let aIndex = 1000; // Arbitrary large value, so that it is at the back
         for (let i = 0; i < currentSpeakerOrder.length; i += 1) {

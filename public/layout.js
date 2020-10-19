@@ -24,7 +24,6 @@ OTLayout = (layoutContainer) => {
   ];
 
   const layoutContainerElement = layoutContainer;
-  // layoutContainerElement.setAttribute('style', 'display: flex; flex-direction: row; flex-wrap: wrap; justify-content: center; align-items: center;');
   layoutContainerElement.style.display = 'flex';
   layoutContainerElement.style['flex-direction'] = 'row';
   layoutContainerElement.style['flex-wrap'] = 'wrap';
