@@ -30,7 +30,7 @@ OTLayout = (layoutContainer) => {
   layoutContainerElement.style['justify-content'] = 'center';
   layoutContainerElement.style['align-items'] = 'center';
 
-  const adjustLayout = (positions, numberOfActiveSpeakers = 2) => {
+  const adjustLayout = (positions, numberOfActiveSpeakers = 2, mostActiveSpeakerId) => {
     // Hide All
     const children = [];
     const childNodes = layoutContainerElement.childNodes;
@@ -57,6 +57,10 @@ OTLayout = (layoutContainer) => {
           children[j].node.style.display = 'flex';
           children[j].node.style.width = layoutDimensions.width;
           children[j].node.style.height = layoutDimension.height;
+
+          if (children[j].id === mostActiveSpeakerId) {
+            children[j].node.style.border = '10px solid #C53994';
+          }
 
           // Fill into position
           positionedChildren.push(children[j]);
