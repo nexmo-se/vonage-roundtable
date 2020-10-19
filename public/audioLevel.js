@@ -13,7 +13,9 @@ OTSpeech = (options) => {
   const channels = {};
   let currentSpeakerOrder = [];
   let positions = [];
+  let mostActiveSpeakerId = null;
   let onActiveSpeakerChangeListener = null;
+  let onMostActiveSpeakerChangeListener = null;
 
   const isVoice = (maLevel) => {
     let logLevel = (Math.log(maLevel) / Math.LN10) / 1.5 + 1;
@@ -67,6 +69,7 @@ OTSpeech = (options) => {
       ...channels[channelId],
       id: channelId,
       isSelf: channels[channelId].type === 'publisher',
+      audioLevel: channels[channelId].movingAverageAudioLevel,
     }));
 
   const getPositions = (newSpeakerOrder) => {
@@ -126,6 +129,26 @@ OTSpeech = (options) => {
       // Callback
       if (onActiveSpeakerChangeListener != null) {
         onActiveSpeakerChangeListener(newSpeakerOrder, newPositions);
+      }
+    }
+
+    // Check Most Active Speaker Change
+    let newMostActiveSpeakerId = null;
+    let newMostActiveSpeakerAudioLevel = 0;
+    for (let i = 0; i < newSpeakerOrder.length; i += 1) {
+      const speaker = newSpeakerOrder[i];
+      const audioLevel = speaker.audioLevel;
+      
+      if (audioLevel > newMostActiveSpeakerAudioLevel) {
+        newMostActiveSpeakerId = speaker.id;
+        newMostActiveSpeakerAudioLevel = audioLevel;
+      }
+    }
+    if (newMostActiveSpeakerId !== mostActiveSpeakerId) {
+      mostActiveSpeakerId = newMostActiveSpeakerId;
+
+      if (onMostActiveSpeakerChangeListener != null) {
+        onMostActiveSpeakerChangeListener(mostActiveSpeakerId);
       }
     }
 
@@ -316,6 +339,10 @@ OTSpeech = (options) => {
     onActiveSpeakerChangeListener = listener;
   };
 
+  const setOnMostActiveSpeakerChangeListener = (listener) => {
+    onMostActiveSpeakerChangeListener = listener;
+  }
+
   const setNumberOfActiveSpeakers = (value) => {
     console.log(`Setting Number of Active Speakers to ${value}`);
     config.numberOfActiveSpeakers = parseInt(value, 10);
@@ -349,6 +376,7 @@ OTSpeech = (options) => {
     getOrderedChannels,
     getPositions,
     setOnActiveSpeakerChangeListener,
+    setOnMostActiveSpeakerChangeListener,
     isSelfActiveSpeaker,
     setSpeakerPin,
     setNumberOfActiveSpeakers,

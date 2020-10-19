@@ -22,6 +22,7 @@ OTLayout = (layoutContainer) => {
     { width: '20%', height: '25%' },  // 19 speakers, 5x4
     { width: '20%', height: '25%' },  // 20 speakers, 5x4
   ];
+  const border = '10px solid #C53994';
 
   const layoutContainerElement = layoutContainer;
   layoutContainerElement.style.display = 'flex';
@@ -30,7 +31,29 @@ OTLayout = (layoutContainer) => {
   layoutContainerElement.style['justify-content'] = 'center';
   layoutContainerElement.style['align-items'] = 'center';
 
-  const adjustLayout = (positions, numberOfActiveSpeakers = 2, mostActiveSpeakerId) => {
+  let mostActiveSpeakerId = null;
+
+  const adjustHighlight = () => {
+    const childNodes = layoutContainerElement.childNodes;
+    for (let i = 0; i < childNodes.length; i += 1) {
+      const childNode = childNodes[i];
+
+      // Remove border from everyone
+      childNode.style.border = null;
+
+      // Add border to most active speaker
+      if (childNode.id === mostActiveSpeakerId) {
+        childNode.style.border = border;
+      }
+    }
+  }
+
+  const updateHighlight = (speakerId) => {
+    mostActiveSpeakerId = speakerId;
+    adjustHighlight();
+  }
+
+  const adjustLayout = (positions, numberOfActiveSpeakers = 2) => {
     // Hide All
     const children = [];
     const childNodes = layoutContainerElement.childNodes;
@@ -38,6 +61,7 @@ OTLayout = (layoutContainer) => {
       const childNode = childNodes[i];
       childNode.setAttribute('style', 'display: none;');
       childNode.style.display = 'none';
+      childNode.style.border = null;
 
       children.push({ id: childNode.id, node: childNode, filled: false });
     }
@@ -57,10 +81,6 @@ OTLayout = (layoutContainer) => {
           children[j].node.style.display = 'flex';
           children[j].node.style.width = layoutDimensions.width;
           children[j].node.style.height = layoutDimension.height;
-
-          if (children[j].id === mostActiveSpeakerId) {
-            children[j].node.style.border = '10px solid #C53994';
-          }
 
           // Fill into position
           positionedChildren.push(children[j]);
@@ -83,9 +103,13 @@ OTLayout = (layoutContainer) => {
     for (let i = 0; i < positionedChildren.length; i += 1) {
       layoutContainerElement.appendChild(positionedChildren[i].node);
     }
+
+    // Adjust Highlight
+    adjustHighlight();
   };
 
   return {
     adjustLayout,
+    updateHighlight,
   };
 };

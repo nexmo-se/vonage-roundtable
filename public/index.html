@@ -77,9 +77,10 @@
       const initialNumberOfActiveSpeakers = 2;
       const layoutContainer = document.getElementById("layoutContainer");
 
-      const { adjustLayout } = OTLayout(layoutContainer);
+      const { adjustLayout, updateHighlight } = OTLayout(layoutContainer);
       const otSpeech = OTSpeech({ numberOfActiveSpeakers: initialNumberOfActiveSpeakers });
       otSpeech.setOnActiveSpeakerChangeListener(onSpeakerOrderChanged);
+      otSpeech.setOnMostActiveSpeakerChangeListener(onMostActiveSpeakerChanged);
 
 
       let OTSession;
@@ -220,6 +221,10 @@
         }
 
         updateLayout();
+      }
+
+      function onMostActiveSpeakerChanged(mostActiveSpeakerId) {
+        updateHighlight(mostActiveSpeakerId);
       }
 
       function updateLayout() {
