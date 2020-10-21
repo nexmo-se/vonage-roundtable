@@ -172,6 +172,8 @@ OTSpeech = (options) => {
     currentSpeakerOrder = newSpeakerOrder;
   };
 
+  const getMostActiveSpeakerId = () => mostActiveSpeakerId;
+
   const getMovingAverage =  (previousMovingAverage, currentAudioLevel) => {
     if (previousMovingAverage == null || previousMovingAverage <= currentAudioLevel) {
       return currentAudioLevel;
@@ -341,10 +343,6 @@ OTSpeech = (options) => {
     setOnActiveSpeakerChangeListener,
     setOnMostActiveSpeakerChangeListener,
 
-    // Order and Positions
-    getOrderedChannels,
-    getPositions,
-
     // Config
     setNumberOfActiveSpeakers,
     getNumberOfActiveSpeakers,
@@ -359,5 +357,10 @@ OTSpeech = (options) => {
     subscribeToVideo,
     addAudioLevel,
     setSpeakerPin,
+
+    // Results
+    getOrderedChannels,
+    getPositions,
+    getMostActiveSpeakerId,
   };
 };

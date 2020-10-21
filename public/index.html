@@ -188,11 +188,6 @@
       // This callback/listener will handle the change of speaker order
       // based on the speech detection via audio level
       function onSpeakerOrderChanged(updatedSpeakers, positions, numberOfActiveSpeakers) {
-        updateLayout(updatedSpeakers, positions, numberOfActiveSpeakers);
-      }
-
-      // Triggers rearrangement of layout
-      function updateLayout(updatedSpeakers, positions, numberOfActiveSpeakers) {
         // Subscribe/Unsubscribe to videos
         for (let i = 0; i < updatedSpeakers.length; i += 1) {
           const speaker = updatedSpeakers[i];
@@ -202,7 +197,7 @@
 
         // Add delay before showing video to user so that the user will not see black tile
         // during the period of subscribing to video stream
-        setTimeout(() => adjustLayout(positions, numberOfActiveSpeakers, updatedSpeakers[0].id), 1000);
+        setTimeout(() => adjustLayout(positions, numberOfActiveSpeakers), 1000);
       }
 
       // This callback/listener will handle the most active speaker changed event
@@ -334,8 +329,8 @@
 
         // Trigger update of layout
         const speakerOrder = otSpeech.getOrderedChannels();
-        const positions = otSpeech.getPositions();
-        updateLayout(speakerOrder, positions, numberOfActiveSpeakers);
+        const positions = otSpeech.getPositions(speakerOrder);
+        onSpeakerOrderChanged(speakerOrder, positions, numberOfActiveSpeakers); // Force trigger of callback
       }
 
       function changeVoiceLevelThresholdText() {
