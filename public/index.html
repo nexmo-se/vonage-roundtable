@@ -91,8 +91,6 @@
       let OTSession;
       let cameraPublisher = null;
 
-      const audioLevels = {};
-
       function handleError(error) {
         console.log(error);
       }
@@ -126,18 +124,6 @@
           const credentials = await getCredentials();
           const { apiKey, sessionId, token } = credentials;
 
-          // Set Interval to process audio level (should move to library)
-          setInterval(() => {
-            const keys = Object.keys(audioLevels);
-            for (let i = 0; i < keys.length; i += 1) {
-              const key = keys[i];
-              const { channel, audioLevel } = audioLevels[key];
-
-              // Update Audio Level to OT Speech
-              otSpeech.addAudioLevel(channel.id, audioLevel);
-            }
-          }, 100);
-
           OTSession = OT.initSession(apiKey, sessionId);
           console.log('Session Created');
 
@@ -156,13 +142,14 @@
               // Add Subscriber to OT Speech
               otSpeech.addSubscriber(subscriber);
 
-              // Get Audio Level
+              // Add Audio Level Event Listener
               subscriber.on('audioLevelUpdated', (e) => {
-                audioLevels[subscriber.id] = {
-                  audioLevel: e.audioLevel,
-                  channel: subscriber,
-                };
+                // Add Audio Level
+                otSpeech.addAudioLevel(subscriber.id, e.audioLevel);
               });
+
+              // Update Speaker Pins (new joiner)
+              updateSpeakerPins()
             });
           });
 
@@ -171,6 +158,9 @@
 
             // Remove Subscriber from OT Speech
             otSpeech.removeSubscriberByStreamId(event.stream.id);
+
+            // Update Speaker Pins (new leaver)
+            updateSpeakerPins()
           });
 
           OTSession.connect(token, (error) => {
@@ -193,59 +183,32 @@
           alert(error.message);
           return Promise.resolve();
         }
-        
       }
 
-      function onSpeakerOrderChanged(updatedSpeakers, positions) {
-        // Fill Available Speaker List
-        const speakerElements = updatedSpeakers.filter(speaker => !(speaker.isSelf))
-          .sort((a, b) => (a.subscriber.stream || {}).name.toLowerCase() < (b.subscriber.stream || {}).name.toLowerCase() ? -1 : 1)
-          .map((speaker) => {
-            const speakerElement = document.createElement('div');
-
-            // Checkbox
-            const checkboxElement = document.createElement('input');
-            checkboxElement.type = 'checkbox';
-            checkboxElement.checked = speaker.pinned;
-            checkboxElement.onchange = () => otSpeech.setSpeakerPin(speaker.id, checkboxElement.checked);
-
-            // Checkbox Label
-            const labelElement = document.createElement('label');
-            labelElement.innerText = ((speaker.subscriber.stream) || {}).name || speaker.id;
-
-            speakerElement.appendChild(checkboxElement);
-            speakerElement.appendChild(labelElement);
-
-            return speakerElement;
-          });
-        const speakerListElement = document.getElementById('speaker-list');
-        speakerListElement.innerHTML = '';
-        for (let i = 0; i < speakerElements.length; i += 1) {
-          const speakerElement = speakerElements[i];
-          speakerListElement.appendChild(speakerElement);
-        }
-
-        updateLayout();
+      // This callback/listener will handle the change of speaker order
+      // based on the speech detection via audio level
+      function onSpeakerOrderChanged(updatedSpeakers, positions, numberOfActiveSpeakers) {
+        updateLayout(updatedSpeakers, positions, numberOfActiveSpeakers);
       }
 
-      function onMostActiveSpeakerChanged(mostActiveSpeakerId) {
-        updateHighlight(mostActiveSpeakerId);
-      }
-
-      function updateLayout() {
-        // Update Channels and Positions
-        const orderedChannels = otSpeech.getOrderedChannels()
-        
-        // Subscribe/Unsubscribe to non-self videos
-        const nonSelfSpeakers = orderedChannels.filter(speaker => !speaker.isSelf);
-        for (let i = 0; i < nonSelfSpeakers.length; i += 1) {
-          const speaker = nonSelfSpeakers[i];
-          const shouldSubscribeToVideo = i < otSpeech.getNumberOfActiveSpeakers();
+      // Triggers rearrangement of layout
+      function updateLayout(updatedSpeakers, positions, numberOfActiveSpeakers) {
+        // Subscribe/Unsubscribe to videos
+        for (let i = 0; i < updatedSpeakers.length; i += 1) {
+          const speaker = updatedSpeakers[i];
+          const shouldSubscribeToVideo = i < numberOfActiveSpeakers;
           otSpeech.subscribeToVideo(speaker.id, shouldSubscribeToVideo);
         }
 
-        
-        setTimeout(() => adjustLayout(otSpeech.getPositions(orderedChannels), otSpeech.getNumberOfActiveSpeakers(), orderedChannels[0].id), 1000);
+        // Add delay before showing video to user so that the user will not see black tile
+        // during the period of subscribing to video stream
+        setTimeout(() => adjustLayout(positions, numberOfActiveSpeakers, updatedSpeakers[0].id), 1000);
+      }
+
+      // This callback/listener will handle the most active speaker changed event
+      // which is used to update the speaker highlight
+      function onMostActiveSpeakerChanged(mostActiveSpeakerId) {
+        updateHighlight(mostActiveSpeakerId);
       }
       
       async function startCamera() {
@@ -282,7 +245,6 @@
               // Display on screen
               cameraPublisher.maAudioLevel = 0.7 * cameraPublisher.maAudioLevel + 0.3 * logLevel;
               document.getElementById('myVoiceLevel').value = `${cameraPublisher.maAudioLevel * 100}`;
-              // document.getElementById('myVoiceLevel').value = `${logLevel * 100}`;
             });
             
             // Publish to Session
@@ -312,6 +274,37 @@
         document.getElementById('av-control').hidden = true;
       }
 
+      function updateSpeakerPins() {
+        // Fill Available Speaker List
+        const speakerElements = otSpeech.getOrderedChannels()
+          .sort((a, b) => (a.subscriber.stream || {}).name.toLowerCase() < (b.subscriber.stream || {}).name.toLowerCase() ? -1 : 1) // sort by speaker name (case-insensitive)
+          .map((speaker) => {
+            // Speaker Element Div
+            const speakerElement = document.createElement('div');
+
+            // Checkbox
+            const checkboxElement = document.createElement('input');
+            checkboxElement.type = 'checkbox';
+            checkboxElement.checked = speaker.pinned;
+            checkboxElement.onchange = () => otSpeech.setSpeakerPin(speaker.id, checkboxElement.checked); // Update Speaker Pin when check/uncheck
+
+            // Checkbox Label
+            const labelElement = document.createElement('label');
+            labelElement.innerText = ((speaker.subscriber.stream) || {}).name || speaker.id;
+
+            speakerElement.appendChild(checkboxElement);
+            speakerElement.appendChild(labelElement);
+
+            return speakerElement;
+          });
+        const speakerListElement = document.getElementById('speaker-list');
+        speakerListElement.innerHTML = '';
+        for (let i = 0; i < speakerElements.length; i += 1) {
+          const speakerElement = speakerElements[i];
+          speakerListElement.appendChild(speakerElement);
+        }
+      }
+
       function toggleAudioDisable(e) {
         const checkbox = document.getElementById('audioDisabled');
         const shouldEnableAudio = !checkbox.checked;
@@ -339,7 +332,10 @@
         const numberOfActiveSpeakers = document.getElementById('numberOfActiveSpeakers').value;
         otSpeech.setNumberOfActiveSpeakers(numberOfActiveSpeakers);
 
-        updateLayout();
+        // Trigger update of layout
+        const speakerOrder = otSpeech.getOrderedChannels();
+        const positions = otSpeech.getPositions();
+        updateLayout(speakerOrder, positions, numberOfActiveSpeakers);
       }
 
       function changeVoiceLevelThresholdText() {

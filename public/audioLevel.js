@@ -8,14 +8,30 @@ OTSpeech = (options) => {
 
     audioLevelPreviousWeight: 0.7, // previous value weightage for moving average computation
     audioLevelCurrentWeight: 0.3, // current value weightage for moving average computation
+    audioLevelUpdateInterval: 100, // interval between updates of audio level in ms (lower = more real-time, higher = less cpu intensive)
   }, options);
 
   const channels = {};
+  const rawAudioLevels = {};
+
   let currentSpeakerOrder = [];
   let positions = [];
   let mostActiveSpeakerId = null;
+
   let onActiveSpeakerChangeListener = null;
   let onMostActiveSpeakerChangeListener = null;
+
+  // Set Interval to process audio level
+  setInterval(() => {
+    const channelIds = Object.keys(rawAudioLevels);
+    for (let i = 0; i < channelIds.length; i += 1) {
+      const channelId = channelIds[i];
+      const rawAudioLevel = rawAudioLevels[channelId];
+
+      // Update Audio Level
+      processAudioLevel(channelId, rawAudioLevel);
+    }
+  }, config.audioLevelUpdateInterval);
 
   const isVoice = (maLevel) => {
     let logLevel = (Math.log(maLevel) / Math.LN10) / 1.5 + 1;
@@ -68,7 +84,6 @@ OTSpeech = (options) => {
     .map(channelId => ({
       ...channels[channelId],
       id: channelId,
-      isSelf: channels[channelId].type === 'publisher',
       audioLevel: channels[channelId].movingAverageAudioLevel,
     }));
 
@@ -128,7 +143,7 @@ OTSpeech = (options) => {
     if (newIdsString !== oldIdsString) {
       // Callback
       if (onActiveSpeakerChangeListener != null) {
-        onActiveSpeakerChangeListener(newSpeakerOrder, newPositions);
+        onActiveSpeakerChangeListener(newSpeakerOrder, newPositions, config.numberOfActiveSpeakers);
       }
     }
 
@@ -165,23 +180,17 @@ OTSpeech = (options) => {
     }
   };
 
-  const isSelfActiveSpeaker = () => {
-    for (let i = 0; i < currentSpeakerOrder.length; i += 1) {
-      const speaker = currentSpeakerOrder[i];
-      if (speaker.isSelf) {
-        return true;
-      }
-    }
-
-    return false;
+  const addAudioLevel = (channelId, audioLevel) => {
+    rawAudioLevels[channelId] = audioLevel;
   };
 
-  const addAudioLevel = (channelId, audioLevel) => {
+  const processAudioLevel = (channelId, audioLevel) => {
     if (channelId == null) {
       return;
     }
 
     if(channels[channelId] == null) {
+      delete rawAudioLevels[channelId];
       console.log(`Channel ${channelId} does not exist`);
       return;
     }
@@ -240,48 +249,6 @@ OTSpeech = (options) => {
     checkActiveSpeakerChange();
   };
 
-  const addPublisher = (publisher) => {
-    console.log(`Adding Publisher ${publisher.id}`);
-    channels[publisher.id] = {
-      type: 'publisher',
-      publisher,
-      movingAverageAudioLevel: 0,
-      speechStartTest: 0,
-      speechEndTest: 0,
-      inSpeech: false,
-    }
-  };
-
-  const removePublisher = (publisher) => {
-    console.log(`Removing Publisher ${publisher.id}`);
-    delete channels[publisher.id];
-  };
-
-  const removePublisherByStreamId = (streamId) => {
-    const publisher = getPublisherByStreamId(streamId);
-    if (publisher != null) {
-      removeSubscriber(publisher);
-    }
-  };
-
-  const getPublisherByStreamId = (streamId) => {
-    const channelIds = Object.keys(channels);
-    for (let i = 0; i < channelIds.length; i += 1) {
-      const channelId = channelIds[i];
-      const channel = channels[channelId];
-
-      if (channel.type === 'publisher') {
-        const publisher = channel.publisher;
-        const publisherStreamId = publisher.streamId;
-        if (publisherStreamId === streamId) {
-          return publisher;
-        }
-      }
-    }
-
-    return null;
-  }
-
   const addSubscriber = (subscriber) => {
     console.log(`Adding Subscriber ${subscriber.id}`);
     channels[subscriber.id] = {
@@ -300,6 +267,7 @@ OTSpeech = (options) => {
   const removeSubscriber = (subscriber) => {
     console.log(`Removing Subscriber ${subscriber.id}`);
     delete channels[subscriber.id];
+    delete rawAudioLevels[subscriber.id];
   };
 
   const removeSubscriberByStreamId = (streamId) => {
@@ -326,8 +294,6 @@ OTSpeech = (options) => {
 
     return null;
   }
-
-  const getChannels = () => channels;
 
   const setSpeakerPin = (channelId, pinned) => {
     if (channels[channelId] != null) {
@@ -371,27 +337,27 @@ OTSpeech = (options) => {
   };
 
   return {
-    addAudioLevel,
-    getChannels,
-    getOrderedChannels,
-    getPositions,
+    // Listeners
     setOnActiveSpeakerChangeListener,
     setOnMostActiveSpeakerChangeListener,
-    isSelfActiveSpeaker,
-    setSpeakerPin,
+
+    // Order and Positions
+    getOrderedChannels,
+    getPositions,
+
+    // Config
     setNumberOfActiveSpeakers,
     getNumberOfActiveSpeakers,
     setVoiceLevelThreshold,
 
-    addPublisher,
-    removePublisher,
-    removePublisherByStreamId,
-    getPublisherByStreamId,
-
+    // Subscribers
     addSubscriber,
     removeSubscriber,
     removeSubscriberByStreamId,
-    getSubscriberByStreamId,
+
+    // Action
     subscribeToVideo,
+    addAudioLevel,
+    setSpeakerPin,
   };
 };
