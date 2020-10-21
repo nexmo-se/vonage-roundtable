@@ -141,12 +141,6 @@
               // Add Subscriber to OT Speech
               otSpeech.addSubscriber(subscriber);
 
-              // Add Audio Level Event Listener
-              subscriber.on('audioLevelUpdated', (e) => {
-                // Add Audio Level
-                otSpeech.addAudioLevel(subscriber.id, e.audioLevel);
-              });
-
               // Update Speaker Pins (new joiner)
               updateSpeakerPins()
             });
@@ -187,16 +181,7 @@
       // This callback/listener will handle the change of speaker order
       // based on the speech detection via audio level
       function onSpeakerOrderChanged(updatedSpeakers, positions, numberOfActiveSpeakers) {
-        // Subscribe/Unsubscribe to videos
-        for (let i = 0; i < updatedSpeakers.length; i += 1) {
-          const speaker = updatedSpeakers[i];
-          const shouldSubscribeToVideo = i < numberOfActiveSpeakers;
-          otSpeech.subscribeToVideo(speaker.id, shouldSubscribeToVideo);
-        }
-
-        // Add delay before showing video to user so that the user will not see black tile
-        // during the period of subscribing to video stream
-        setTimeout(() => adjustLayout(positions, numberOfActiveSpeakers), 1000);
+        adjustLayout(positions, numberOfActiveSpeakers);
       }
 
       // This callback/listener will handle the most active speaker changed event

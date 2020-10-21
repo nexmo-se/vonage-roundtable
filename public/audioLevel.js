@@ -1,6 +1,9 @@
 OTSpeech = (options) => {
   const config = Object.assign({
     numberOfActiveSpeakers: 2, // Maximum Number of Active Speaker (which video should be shown)
+    autoSubscription: true, // Automatically subscribe/unsubscribe to video with delay
+    autoSubscriptionCallbackDelay: 1000, // Delay before calling callback (to allow time for subscription to stablize)
+    unsubscribeDelay: 1000, // Delay before unsubscribing
 
     voiceLevelThreshold: 0.25, // Threshold for Voice Detection
     consecutiveVoiceMs: 500, // Minimum amount of consecutive voice (ms) before the speaker is considered in a speech
@@ -139,14 +142,6 @@ OTSpeech = (options) => {
     const newIdsString = JSON.stringify(newIds); // For easy comparison
     const oldIdsString = JSON.stringify(oldIds); // For easy comparison
 
-    // Run only if there are changes in active speaker list
-    if (newIdsString !== oldIdsString) {
-      // Callback
-      if (onActiveSpeakerChangeListener != null) {
-        onActiveSpeakerChangeListener(newSpeakerOrder, newPositions, config.numberOfActiveSpeakers);
-      }
-    }
-
     // Check Most Active Speaker Change
     let newMostActiveSpeakerId = null;
     let newMostActiveSpeakerAudioLevel = 0;
@@ -170,9 +165,31 @@ OTSpeech = (options) => {
     // Update position and speaker order
     positions = newPositions;
     currentSpeakerOrder = newSpeakerOrder;
+
+    // Run only if there are changes in active speaker list
+    if (newIdsString !== oldIdsString) {
+      // Subscribe/Unsubscribe to videos
+      if (config.autoSubscription) {
+        updateSubscriptionToVideos();
+      }
+
+      // Callback
+      if (onActiveSpeakerChangeListener != null) {
+        const delay = config.autoSubscription ? config.autoSubscriptionCallbackDelay : 0; // Add delay if there is auto subscription
+        setTimeout(() => onActiveSpeakerChangeListener(newSpeakerOrder, newPositions, config.numberOfActiveSpeakers), delay);
+      }
+    }
   };
 
   const getMostActiveSpeakerId = () => mostActiveSpeakerId;
+
+  const updateSubscriptionToVideos = () => {
+    for (let i = 0; i < currentSpeakerOrder.length; i += 1) {
+      const speaker = currentSpeakerOrder[i];
+      const shouldSubscribeToVideo = i < config.numberOfActiveSpeakers;
+      subscribeToVideo(speaker.id, shouldSubscribeToVideo);
+    }
+  }
 
   const getMovingAverage =  (previousMovingAverage, currentAudioLevel) => {
     if (previousMovingAverage == null || previousMovingAverage <= currentAudioLevel) {
@@ -264,6 +281,12 @@ OTSpeech = (options) => {
       pinned: false,
       unsubscribeHandle: null,
     }
+
+    // Add Audio Level Event Listener
+    subscriber.on('audioLevelUpdated', (e) => {
+      // Add Audio Level
+      addAudioLevel(subscriber.id, e.audioLevel);
+    });
   };
 
   const removeSubscriber = (subscriber) => {
@@ -314,6 +337,10 @@ OTSpeech = (options) => {
   const setNumberOfActiveSpeakers = (value) => {
     console.log(`Setting Number of Active Speakers to ${value}`);
     config.numberOfActiveSpeakers = parseInt(value, 10);
+
+    if (config.autoSubscription) {
+      otSpeech.updateSubscriptionToVideos();
+    }
   };
 
   const getNumberOfActiveSpeakers = () => config.numberOfActiveSpeakers;
@@ -332,7 +359,7 @@ OTSpeech = (options) => {
     if (shouldSubscribeToVideo) {
       channels[channelId].subscriber.subscribeToVideo(true);
     } else {
-      const handle = setTimeout(() => channels[channelId].subscriber.subscribeToVideo(false), 1000);
+      const handle = setTimeout(() => channels[channelId].subscriber.subscribeToVideo(false), config.unsubscribeDelay);
       channels[channelId].unsubscribeHandle = handle;
     }
 
@@ -354,6 +381,7 @@ OTSpeech = (options) => {
     removeSubscriberByStreamId,
 
     // Action
+    updateSubscriptionToVideos,
     subscribeToVideo,
     addAudioLevel,
     setSpeakerPin,
