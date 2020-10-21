@@ -129,7 +129,7 @@ OTSpeech = (options) => {
     return newPositions;
   }
 
-  const checkActiveSpeakerChange = () => {
+  const checkActiveSpeakerChange = (forceCallback = false) => {
     const newSpeakerOrder = getOrderedChannels(); // Get sorted speakers based on speech and moving average audio level
     const newPositions = getPositions(newSpeakerOrder); // Get updated speaker positions in the grid
 
@@ -167,7 +167,7 @@ OTSpeech = (options) => {
     currentSpeakerOrder = newSpeakerOrder;
 
     // Run only if there are changes in active speaker list
-    if (newIdsString !== oldIdsString) {
+    if (forceCallback || newIdsString !== oldIdsString) {
       // Subscribe/Unsubscribe to videos
       if (config.autoSubscription) {
         updateSubscriptionToVideos();
@@ -265,7 +265,7 @@ OTSpeech = (options) => {
 
 
     // Check Active Speaker Change
-    checkActiveSpeakerChange();
+    checkActiveSpeakerChange(false);
   };
 
   const addSubscriber = (subscriber) => {
@@ -337,10 +337,7 @@ OTSpeech = (options) => {
   const setNumberOfActiveSpeakers = (value) => {
     console.log(`Setting Number of Active Speakers to ${value}`);
     config.numberOfActiveSpeakers = parseInt(value, 10);
-
-    if (config.autoSubscription) {
-      otSpeech.updateSubscriptionToVideos();
-    }
+    checkActiveSpeakerChange(true);
   };
 
   const getNumberOfActiveSpeakers = () => config.numberOfActiveSpeakers;
@@ -348,6 +345,7 @@ OTSpeech = (options) => {
   const setVoiceLevelThreshold = (value) => {
     console.log(`Setting Voice Level Threshold to ${value}`);
     config.voiceLevelThreshold = parseFloat(value);
+    checkActiveSpeakerChange(true);
   };
 
   const subscribeToVideo = (channelId, shouldSubscribeToVideo) => {

@@ -310,11 +310,6 @@
       function changeNumberOfActiveSpeakers() {
         const numberOfActiveSpeakers = document.getElementById('numberOfActiveSpeakers').value;
         otSpeech.setNumberOfActiveSpeakers(numberOfActiveSpeakers);
-
-        // Trigger update of layout
-        const speakerOrder = otSpeech.getOrderedChannels();
-        const positions = otSpeech.getPositions(speakerOrder);
-        onSpeakerOrderChanged(speakerOrder, positions, numberOfActiveSpeakers); // Force trigger of callback
       }
 
       function changeVoiceLevelThresholdText() {
