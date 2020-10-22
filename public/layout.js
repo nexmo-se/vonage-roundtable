@@ -23,6 +23,7 @@ OTLayout = (layoutContainer) => {
     { width: '20%', height: '25%' },  // 20 speakers, 5x4
   ];
   const border = '10px solid #C53994';
+  const emptyBorder = '10px solid transparent';
 
   const layoutContainerElement = layoutContainer;
   layoutContainerElement.style.display = 'flex';
@@ -40,7 +41,7 @@ OTLayout = (layoutContainer) => {
       const childNode = childNodes[i];
 
       // Remove border from everyone
-      childNode.style.border = null;
+      childNode.style.border = emptyBorder;
 
       // Add border to most active speaker
       if (highlightEnabled && childNode.id === mostActiveSpeakerId) {
