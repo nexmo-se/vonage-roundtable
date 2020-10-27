@@ -142,8 +142,8 @@
           OTSession.on('streamCreated', (event) => {
             const layoutContainer = event.stream.videoType === 'screen' ? 'screenContainer' : 'layoutContainer';
             const subscriber = OTSession.subscribe(event.stream, insertDefaultUI ? layoutContainer : null, {
-              insertMode: insertDefaultUI ? 'append' : undefined,
-              fitMode: insertDefaultUI ? 'contain' : undefined,
+              insertMode: insertDefaultUI ? 'append' : undefined, // not using insert mode for insertDefaultUI true
+              fitMode: insertDefaultUI ? 'contain' : undefined, // not using fit mode for insertDefaultUI true
               insertDefaultUI,
               nameDisplayMode : 'on',
               width: event.stream.videoType === 'screen' ? '100%' : 640,
@@ -228,6 +228,8 @@
       // This callback/listener will handle the change of speaker order
       // based on the speech detection via audio level
       function onSpeakerOrderChanged(updatedSpeakers, positions, numberOfActiveSpeakers) {
+        // Use Subscriber ID for InsertDefaultUI true
+        // Use Stream ID for InsertDefaultUI false
         const mappedPositions = positions.map(position => insertDefaultUI ? otSpeech.getSubscriberIdByStreamId(position) : position);
         adjustLayout(mappedPositions, numberOfActiveSpeakers);
       }
@@ -235,6 +237,8 @@
       // This callback/listener will handle the most active speaker changed event
       // which is used to update the speaker highlight
       function onMostActiveSpeakerChanged(mostActiveSpeakerId) {
+        // Use Subscriber ID for InsertDefaultUI true
+        // Use Stream ID for InsertDefaultUI false
         const mappedId = insertDefaultUI ? otSpeech.getSubscriberIdByStreamId(mostActiveSpeakerId) : mostActiveSpeakerId;
         updateHighlight(mappedId);
       }
