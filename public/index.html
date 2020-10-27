@@ -18,8 +18,8 @@
   </head>
   <body style="display: flex; flex-direction: row; width: 100%; height: 100vh;">
     <div style="position: relative; display: flex; flex: 1; height: 100vh; flex-direction: column; background-color: black;">
-      <div id="screenContainer" style="position: relative; display: flex; width: 100%; height: auto;"></div>
-      <div id="layoutContainer" style="position: relative; display: flex; width: 100%; height: 100vh;"></div>
+      <div id="screenContainer" style="position: relative; display: flex; width: 100%; height: auto; background-color: black;"></div>
+      <div id="layoutContainer" style="position: relative; display: flex; width: 100%; height: 100vh; background-color: black;"></div>
     </div>
 
     <div style="position: relative; left: 0; top: 0; padding: 16px; display: flex; flex-direction: column; background-color: white; width: 300px;">
@@ -139,10 +139,10 @@
           console.log('Session Created');
 
           OTSession.on('streamCreated', (event) => {
-            const subscriber = OTSession.subscribe(event.stream, event.stream.videoType === 'screen' ? 'screenContainer' : 'layoutContainer', {
-              insertMode: 'append',
-              fitMode: 'contain',
-              nameDisplayMode : 'on',
+            const layoutContainer = event.stream.videoType === 'screen' ? 'screenContainer' : 'layoutContainer';
+            const subscriber = OTSession.subscribe(event.stream, null, {
+              insertDefaultUI: false,
+              nameDisplayMode: 'on',
               width: event.stream.videoType === 'screen' ? '100%' : 640,
               height: event.stream.videoType === 'screen' ? '100vh' : 480,
             }, (error) => {
@@ -158,6 +158,22 @@
               // Update Speaker Pins (new joiner)
               updateSpeakerPins()
             });
+
+            // Note: Use this only if InsertDefaultUI is false
+            subscriber.on('videoElementCreated', (e) => {
+              const videoElement = e.element;
+              videoElement.style.width = event.stream.videoType === 'screen' ? '100%' : '100%';
+              videoElement.style.height = event.stream.videoType === 'screen' ? 'auto' : '100%';
+              videoElement.style.objectFit = 'contain';
+
+              const divElement = document.createElement('div');
+              divElement.id = e.target.stream.id;
+              divElement.style.margin = 'auto';
+              divElement.appendChild(videoElement);
+
+              const layoutContainer = event.stream.videoType === 'screen' ? 'screenContainer' : 'layoutContainer';
+              document.getElementById(layoutContainer).appendChild(divElement);
+            });
           });
 
           OTSession.on('streamDestroyed', (event) => {
@@ -165,6 +181,18 @@
 
             // Remove Subscriber from OT Speech
             otSpeech.removeSubscriberByStreamId(event.stream.id);
+
+            // Remove Subscriber div
+            const layoutContainer = event.stream.videoType === 'screen' ? 'screenContainer' : 'layoutContainer';
+            const containerElement = document.getElementById(layoutContainer);
+            const childNodes = containerElement.childNodes;
+            for (let i = 0; i < childNodes.length; i += 1) {
+              const childNode = childNodes[i];
+              if (childNode.id === event.stream.id) {
+                // Remove Child Element
+                containerElement.removeChild(childNode);
+              }
+            }
 
             // Update Speaker Pins (new leaver)
             updateSpeakerPins()

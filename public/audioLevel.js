@@ -269,9 +269,9 @@ OTSpeech = (options) => {
   };
 
   const addSubscriber = (subscriber) => {
-    console.log(`Adding Subscriber ${subscriber.id}`);
-    channels[subscriber.id] = {
-      id: subscriber.id,
+    console.log(`Adding Subscriber ${subscriber.stream.id}`);
+    channels[subscriber.stream.id] = {
+      id: subscriber.stream.id,
       type: 'subscriber',
       subscriber,
       movingAverageAudioLevel: 0,
@@ -285,14 +285,14 @@ OTSpeech = (options) => {
     // Add Audio Level Event Listener
     subscriber.on('audioLevelUpdated', (e) => {
       // Add Audio Level
-      addAudioLevel(subscriber.id, e.audioLevel);
+      addAudioLevel(subscriber.stream.id, e.audioLevel);
     });
   };
 
   const removeSubscriber = (subscriber) => {
-    console.log(`Removing Subscriber ${subscriber.id}`);
-    delete channels[subscriber.id];
-    delete rawAudioLevels[subscriber.id];
+    console.log(`Removing Subscriber ${subscriber.stream.id}`);
+    delete channels[subscriber.stream.id];
+    delete rawAudioLevels[subscriber.stream.id];
   };
 
   const removeSubscriberByStreamId = (streamId) => {
