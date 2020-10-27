@@ -90,6 +90,7 @@
 
     <script>
       const initialNumberOfActiveSpeakers = 2;
+      const insertDefaultUI = false; // Whether to use default UI from Opentok or add manually
       const layoutContainer = document.getElementById("layoutContainer");
 
       const { adjustLayout, enableHighlight, updateHighlight } = OTLayout(layoutContainer);
@@ -140,9 +141,11 @@
 
           OTSession.on('streamCreated', (event) => {
             const layoutContainer = event.stream.videoType === 'screen' ? 'screenContainer' : 'layoutContainer';
-            const subscriber = OTSession.subscribe(event.stream, null, {
-              insertDefaultUI: false,
-              nameDisplayMode: 'on',
+            const subscriber = OTSession.subscribe(event.stream, insertDefaultUI ? layoutContainer : null, {
+              insertMode: insertDefaultUI ? 'append' : undefined,
+              fitMode: insertDefaultUI ? 'contain' : undefined,
+              insertDefaultUI,
+              nameDisplayMode : 'on',
               width: event.stream.videoType === 'screen' ? '100%' : 640,
               height: event.stream.videoType === 'screen' ? '100vh' : 480,
             }, (error) => {
@@ -160,20 +163,22 @@
             });
 
             // Note: Use this only if InsertDefaultUI is false
-            subscriber.on('videoElementCreated', (e) => {
-              const videoElement = e.element;
-              videoElement.style.width = event.stream.videoType === 'screen' ? '100%' : '100%';
-              videoElement.style.height = event.stream.videoType === 'screen' ? 'auto' : '100%';
-              videoElement.style.objectFit = 'contain';
+            if (!insertDefaultUI) {
+              subscriber.on('videoElementCreated', (e) => {
+                const videoElement = e.element;
+                videoElement.style.width = event.stream.videoType === 'screen' ? '100%' : '100%';
+                videoElement.style.height = event.stream.videoType === 'screen' ? 'auto' : '100%';
+                videoElement.style.objectFit = 'contain';
 
-              const divElement = document.createElement('div');
-              divElement.id = e.target.stream.id;
-              divElement.style.margin = 'auto';
-              divElement.appendChild(videoElement);
+                const divElement = document.createElement('div');
+                divElement.id = e.target.stream.id;
+                divElement.style.margin = 'auto';
+                divElement.appendChild(videoElement);
 
-              const layoutContainer = event.stream.videoType === 'screen' ? 'screenContainer' : 'layoutContainer';
-              document.getElementById(layoutContainer).appendChild(divElement);
-            });
+                const layoutContainer = event.stream.videoType === 'screen' ? 'screenContainer' : 'layoutContainer';
+                document.getElementById(layoutContainer).appendChild(divElement);
+              });
+            }
           });
 
           OTSession.on('streamDestroyed', (event) => {
@@ -223,13 +228,15 @@
       // This callback/listener will handle the change of speaker order
       // based on the speech detection via audio level
       function onSpeakerOrderChanged(updatedSpeakers, positions, numberOfActiveSpeakers) {
-        adjustLayout(positions, numberOfActiveSpeakers);
+        const mappedPositions = positions.map(position => insertDefaultUI ? otSpeech.getSubscriberByStreamId(position).id : position);
+        adjustLayout(mappedPositions, numberOfActiveSpeakers);
       }
 
       // This callback/listener will handle the most active speaker changed event
       // which is used to update the speaker highlight
       function onMostActiveSpeakerChanged(mostActiveSpeakerId) {
-        updateHighlight(mostActiveSpeakerId);
+        const mappedId = insertDefaultUI ? otSpeech.getSubscriberByStreamId(mostActiveSpeakerId).id : mostActiveSpeakerId;
+        updateHighlight(mappedId);
       }
       
       async function startCamera() {

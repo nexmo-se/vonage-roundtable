@@ -377,6 +377,7 @@ OTSpeech = (options) => {
     addSubscriber,
     removeSubscriber,
     removeSubscriberByStreamId,
+    getSubscriberByStreamId,
 
     // Action
     updateSubscriptionToVideos,
