@@ -42,6 +42,10 @@
           <button id="unpublish-camera" onclick="stopCamera()" disabled>Unpublish Camera</button>
         </div>
 
+        <div style="margin-bottom: 16px;">
+          <button id="publish-camera" onclick="cycleCamera()">Cycle Camera</button>
+        </div>
+
         <div>
           <button id="publish-screen" onclick="startScreen()">Publish Screen</button>
           <button id="unpublish-screen" onclick="stopScreen()" disabled>Unpublish Screen</button>
@@ -304,6 +308,12 @@
         document.getElementById('publish-camera').disabled = false;
         document.getElementById('unpublish-camera').disabled = true;
         document.getElementById('av-control').hidden = true;
+      }
+
+      function cycleCamera() {
+        if (cameraPublisher != null) {
+          cameraPublisher.cycleVideo();
+        }
       }
 
       async function startScreen() {
