@@ -62,6 +62,7 @@
           </div>
 
           <div id="av-control" style="margin-bottom: 16px;" hidden>
+            <label for="name" class="Vlt-label">Audio/Video Control</label>
             <div style="margin-bottom: 16px;">
               <button id="cycle-camera" class="Vlt-btn Vlt-btn--small Vlt-btn--secondary" onclick="cycleCamera()">Cycle Camera</button>
             </div>
@@ -100,27 +101,15 @@
           </div>
           </div>
 
-          <div>
-            <span>Max Number of Active Speakers:</span>
+          <div id="speaker-control" style="margin-bottom: 16px;">
+            <label for="name" class="Vlt-label">Speaker Control</label>
+            <span>Max Active Speakers:</span>
             <span id="numberOfActiveSpeakersText" style="margin-left: 4px;">2</span>
           </div>
           <input id="numberOfActiveSpeakers" style="margin-bottom: 16px; width: 100%; "
             type="range" min="1" max="20" value="2" class="slider"
             onchange="changeNumberOfActiveSpeakers()"
             oninput="changeNumberOfActiveSpeakersText()" />
-
-          <div>My Voice Level</div>
-          <input id="myVoiceLevel" style="margin-bottom: 16px; width: 100%; "
-            type="range" min="1" max="100" value="50" class="slider" disabled />
-
-          <div>
-            <span>Voice Level Threshold:</span>
-            <span id="voiceLevelThresholdText" style="margin-left: 4px;">0.25</span>
-          </div>
-          <input id="voiceLevelThreshold" style="margin-bottom: 16px; width: 100%; "
-            type="range" min="1" max="100" value="25" class="slider"
-            onchange="changeVoiceLevelThreshold()"
-            oninput="changeVoiceLevelThresholdText()" />
 
           <div>Pin Speakers</div>
           <div id="speaker-list" style="margin-bottom: 16px; padding: 16px; border: 1px solid #c2c4cc; border-radius: 5px; background-color: #fff;"></div>
@@ -130,6 +119,8 @@
 
     <script>
       const initialNumberOfActiveSpeakers = 2;
+      const publisherResolution = { width: 640, height: 480 };
+      const subscriberResolution = { width: 640, height: 480 };
       const insertDefaultUI = true; // Whether to use default UI from Opentok or add manually
       const layoutContainer = document.getElementById("layoutContainer");
 
@@ -188,6 +179,7 @@
               nameDisplayMode : 'on',
               width: event.stream.videoType === 'screen' ? '100%' : 640,
               height: event.stream.videoType === 'screen' ? '100vh' : 480,
+              preferredResolution: subscriberResolution,
             }, (error) => {
               if (error) {
                 return handleError(error);
@@ -299,25 +291,12 @@
             fitMode: 'contain',
             insertMode: 'append',
             name,
-            resolution: '320x240',
-            style: { nameDisplayMode: "off" }
+            resolution: `${publisherResolution.width}x${publisherResolution.height}`,
           }, (error) => {
             if (error) {
               handleError(error);
               return;
             }
-
-            cameraPublisher.maAudioLevel = 0;
-
-            // Get Audio Level
-            cameraPublisher.on('audioLevelUpdated', (e) => {
-              let logLevel = (Math.log(e.audioLevel) / Math.LN10) / 1.5 + 1;
-              logLevel = Math.min(Math.max(logLevel, 0), 1);
-
-              // Display on screen
-              cameraPublisher.maAudioLevel = 0.7 * cameraPublisher.maAudioLevel + 0.3 * logLevel;
-              document.getElementById('myVoiceLevel').value = `${cameraPublisher.maAudioLevel * 100}`;
-            });
             
             // Publish to Session
             OTSession.publish(cameraPublisher, (err) => {
@@ -405,21 +384,35 @@
         const speakerElements = otSpeech.getOrderedChannels()
           .sort((a, b) => (a.subscriber.stream || {}).name.toLowerCase() < (b.subscriber.stream || {}).name.toLowerCase() ? -1 : 1) // sort by speaker name (case-insensitive)
           .map((speaker) => {
-            // Speaker Element Div
+            // Speaker Div
             const speakerElement = document.createElement('div');
+            speakerElement.classList.add('Vlt-checkbox');
+
+            // Container Label
+            const label1 = document.createElement('label');
+            const span1 = document.createElement('span');
+            span1.classList.add('Vlt-checkbox__button');
 
             // Checkbox
-            const checkboxElement = document.createElement('input');
-            checkboxElement.type = 'checkbox';
-            checkboxElement.checked = speaker.pinned;
-            checkboxElement.onchange = () => otSpeech.setSpeakerPin(speaker.id, checkboxElement.checked); // Update Speaker Pin when check/uncheck
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.checked = speaker.pinned;
+            checkbox.onchange = () => otSpeech.setSpeakerPin(speaker.id, checkboxElement.checked); // Update Speaker Pin when check/uncheck
 
-            // Checkbox Label
-            const labelElement = document.createElement('label');
-            labelElement.innerText = ((speaker.subscriber.stream) || {}).name || speaker.id;
+            // Icon
+            const span2 = document.createElement('span');
+            span2.classList.add('Vlt-checkbox__icon');
 
-            speakerElement.appendChild(checkboxElement);
-            speakerElement.appendChild(labelElement);
+            // Value
+            const label2 = document.createElement('label');
+            label2.innerText = ((speaker.subscriber.stream) || {}).name || speaker.id;
+
+            // Set Hierarchy
+            span1.appendChild(checkbox);
+            span1.appendChild(span2);
+            label1.appendChild(span1);
+            label1.appendChild(label2);
+            speakerElement.appendChild(label1);
 
             return speakerElement;
           });
@@ -457,18 +450,6 @@
       function changeNumberOfActiveSpeakers() {
         const numberOfActiveSpeakers = document.getElementById('numberOfActiveSpeakers').value;
         otSpeech.setNumberOfActiveSpeakers(numberOfActiveSpeakers);
-      }
-
-      function changeVoiceLevelThresholdText() {
-        const rawVoiceLevelThreshold = document.getElementById('voiceLevelThreshold').value;
-        const voiceLevelThreshold = (rawVoiceLevelThreshold / 100).toFixed(2);
-        document.getElementById('voiceLevelThresholdText').innerText = voiceLevelThreshold;
-      }
-
-      function changeVoiceLevelThreshold() {
-        const rawVoiceLevelThreshold = document.getElementById('voiceLevelThreshold').value;
-        const voiceLevelThreshold = (rawVoiceLevelThreshold / 100).toFixed(2);
-        otSpeech.setVoiceLevelThreshold(voiceLevelThreshold);
       }
       
 
