@@ -15,81 +15,117 @@
         margin: 0;
       }
     </style>
+    <link rel="stylesheet" href="volta.min.css">
   </head>
   <body style="display: flex; flex-direction: row; width: 100%; height: 100vh;">
-    <div style="position: relative; display: flex; flex: 1; height: 100vh; flex-direction: column; background-color: black;">
+    <div style="position: relative; display: flex; flex: 1; height: 100vh; flex-direction: column; background-color: black; overflow-y: scroll;">
       <div id="screenContainer" style="position: relative; display: flex; width: 100%; height: auto; background-color: black;"></div>
       <div id="layoutContainer" style="position: relative; display: flex; width: 100%; height: 100vh; background-color: black;"></div>
     </div>
 
-    <div style="position: relative; left: 0; top: 0; padding: 16px; display: flex; flex-direction: column; background-color: white; width: 300px;">
-
-      <div id="publisherContainer" style="margin-bottom: 16px;"></div>
-      <div id="publisherContainerScreen" style="margin-bottom: 16px; display: none;"></div>
-
-      <div style="margin-bottom: 16px;">
-        <label for="name">Display Name</label>
-        <input type="text" id="name" />
-      </div>
-
-      <div id="session-control" style="margin-bottom: 16px;">
-        <button id="connect" onclick="initializeSession()">Connect to Session</button>
-      </div>
-
-      <div id="publisher-control" style="margin-bottom: 16px;" hidden>
-        <div style="margin-bottom: 8px;">
-          <button id="publish-camera" onclick="startCamera()">Publish Camera</button>
-          <button id="unpublish-camera" onclick="stopCamera()" disabled>Unpublish Camera</button>
-        </div>
-
-        <div style="margin-bottom: 16px;">
-          <button id="publish-camera" onclick="cycleCamera()">Cycle Camera</button>
+    <!-- <div style="position: relative; left: 0; top: 0; padding: 16px; display: flex; flex-direction: column; width: 300px;"> -->
+    <div id="Vlt-sidenav" class="Vlt-sidenav" style="display: flex; flex-direction: column; width: 600px;">
+      <div class="Vlt-sidenav__scroll" style="width: 100%; padding: 16px;">
+        <div class="Vlt-sidenav__block Vlt-sidenav__block--logo">
+          <a class="Vlt-sidenav__logo" href="/">
+            <img class="Vlt-sidenav__elem--full" src="vonage-logo.svg"/>
+          </a>
         </div>
 
         <div>
-          <button id="publish-screen" onclick="startScreen()">Publish Screen</button>
-          <button id="unpublish-screen" onclick="stopScreen()" disabled>Unpublish Screen</button>
+          <div id="publisherContainer" style="margin-bottom: 16px;"></div>
+          <div id="publisherContainerScreen" style="margin-bottom: 16px; display: none;"></div>
+
+          <div class="Vlt-form__element">
+            <label for="name" class="Vlt-label">Display Name</label>
+            <div class="Vlt-input">
+              <input type="text" id="name" />
+            </div>
+          </div>
+
+          <div id="session-control" style="margin-bottom: 16px;">
+            <button id="connect" class="Vlt-btn Vlt-btn--primary" onclick="initializeSession()">Connect to Session</button>
+          </div>
+
+          <div id="publisher-control" style="margin-bottom: 16px;" hidden>
+            <label>Camera</label>
+            <div style="margin-bottom: 8px;">
+              <button id="publish-camera" class="Vlt-btn Vlt-btn--small Vlt-btn--secondary" onclick="startCamera()">Publish</button>
+              <button id="unpublish-camera" class="Vlt-btn Vlt-btn--small Vlt-btn--destructive" onclick="stopCamera()" disabled>Unpublish</button>
+            </div>
+
+            <label>Screen</label>
+            <div>
+              <button id="publish-screen" class="Vlt-btn Vlt-btn--small Vlt-btn--secondary" onclick="startScreen()">Publish</button>
+              <button id="unpublish-screen" class="Vlt-btn Vlt-btn--small Vlt-btn--destructive" onclick="stopScreen()" disabled>Unpublish</button>
+            </div>
+          </div>
+
+          <div id="av-control" style="margin-bottom: 16px;" hidden>
+            <div style="margin-bottom: 16px;">
+              <button id="cycle-camera" class="Vlt-btn Vlt-btn--small Vlt-btn--secondary" onclick="cycleCamera()">Cycle Camera</button>
+            </div>
+
+            <div class="Vlt-checkbox">
+              <label for="audioDisabled">
+                <span class="Vlt-checkbox__button">
+                  <input type="checkbox" id="audioDisabled" onchange="toggleAudioDisable()"/>
+                  <span class="Vlt-checkbox__icon"></span>
+                </span>
+                <label for="audioDisabled">Disable Audio</label>
+              </label>
+            </div>
+
+            <div class="Vlt-checkbox">
+              <label for="videoDisabled">
+                <span class="Vlt-checkbox__button">
+                  <input type="checkbox" id="videoDisabled" onchange="toggleVideoDisable()"/>
+                  <span class="Vlt-checkbox__icon"></span>
+                </span>
+                <label for="videoDisabled">Disable Video</label>
+              </label>
+            </div>
+          </div>
+
+          <div id="highlight-control" style="margin-bottom: 16px;">
+            <div class="Vlt-checkbox">
+              <label for="videoDisabled">
+                <span class="Vlt-checkbox__button">
+                  <input type="checkbox" id="highlightEnabled" onchange="toggleHighlightEnabled()" checked />
+                  <span class="Vlt-checkbox__icon"></span>
+                </span>
+                <label for="highlightEnabled">Enable Speaker Highlight</label>
+              </label>
+            </div>
+          </div>
+          </div>
+
+          <div>
+            <span>Max Number of Active Speakers:</span>
+            <span id="numberOfActiveSpeakersText" style="margin-left: 4px;">2</span>
+          </div>
+          <input id="numberOfActiveSpeakers" style="margin-bottom: 16px; width: 100%; "
+            type="range" min="1" max="20" value="2" class="slider"
+            onchange="changeNumberOfActiveSpeakers()"
+            oninput="changeNumberOfActiveSpeakersText()" />
+
+          <div>My Voice Level</div>
+          <input id="myVoiceLevel" style="margin-bottom: 16px; width: 100%; "
+            type="range" min="1" max="100" value="50" class="slider" disabled />
+
+          <div>
+            <span>Voice Level Threshold:</span>
+            <span id="voiceLevelThresholdText" style="margin-left: 4px;">0.25</span>
+          </div>
+          <input id="voiceLevelThreshold" style="margin-bottom: 16px; width: 100%; "
+            type="range" min="1" max="100" value="25" class="slider"
+            onchange="changeVoiceLevelThreshold()"
+            oninput="changeVoiceLevelThresholdText()" />
+
+          <div>Pin Speakers</div>
+          <div id="speaker-list" style="margin-bottom: 16px; padding: 16px; border: 1px solid #c2c4cc; border-radius: 5px; background-color: #fff;"></div>
         </div>
       </div>
-
-      <div id="av-control" style="margin-bottom: 16px;" hidden>
-        <input type="checkbox" id="audioDisabled" onchange="toggleAudioDisable()"/>
-        <label for="audioDisabled">Disable Audio</label>
-
-        <input type="checkbox" id="videoDisabled" onchange="toggleVideoDisable()"/>
-        <label for="videoDisabled">Disable Video</label>
-      </div>
-
-      <div id="highlight-control" style="margin-bottom: 16px;">
-        <input type="checkbox" id="highlightEnabled" onchange="toggleHighlightEnabled()" checked />
-        <label for="highlightEnabled">Enable Speaker Highlight</label>
-      </div>
-
-      <div>
-        <span>Maximum Number of Active Speakers:</span>
-        <span id="numberOfActiveSpeakersText" style="margin-left: 4px;">2</span>
-      </div>
-      <input id="numberOfActiveSpeakers" style="margin-bottom: 16px;"
-        type="range" min="1" max="20" value="2" class="slider"
-        onchange="changeNumberOfActiveSpeakers()"
-        oninput="changeNumberOfActiveSpeakersText()" />
-
-      <div>My Voice Level</div>
-      <input id="myVoiceLevel" style="margin-bottom: 16px;"
-        type="range" min="1" max="100" value="50" class="slider" disabled />
-
-      <div>
-        <span>Voice Level Threshold:</span>
-        <span id="voiceLevelThresholdText" style="margin-left: 4px;">0.25</span>
-      </div>
-      <input id="voiceLevelThreshold" style="margin-bottom: 16px;"
-        type="range" min="1" max="100" value="25" class="slider"
-        onchange="changeVoiceLevelThreshold()"
-        oninput="changeVoiceLevelThresholdText()" />
-
-      <div>Available Speakers (Check to Pin)</div>
-      <div id="speaker-list" style="margin-bottom: 16px; padding: 16px; border: 1px solid #000"></div>
-
     </div>
 
     <script>
