@@ -1,9 +1,13 @@
-OTLayout = (layoutContainer) => {
-  const layoutDimensions = [
+OTLayout = (layoutContainer, options) => {
+  const config = Object.assign({
+    aspectRatio: 16 / 9, // Aspect Ratio
+  }, options);
+
+  const fixedLayoutDimensions = [
     { width: '100%', height: '100%' },  // 0 speakers, 1x1
     { width: '100%', height: '100%' },  // 1 speakers, 1x1
     { width: '50%', height: '100%' },  // 2 speakers, 2x1
-    { width: '33.333%', height: '100%' },  // 3 speakers, 3x1
+    { width: '50%', height: '50%' },  // 3 speakers, 3x1
     { width: '50%', height: '50%' },  // 4 speakers, 2x2
     { width: '33.333%', height: '50%' },  // 5 speakers, 3x2
     { width: '33.333%', height: '50%' },  // 6 speakers, 3x2
@@ -22,6 +26,7 @@ OTLayout = (layoutContainer) => {
     { width: '20%', height: '25%' },  // 19 speakers, 5x4
     { width: '20%', height: '25%' },  // 20 speakers, 5x4
   ];
+
   const border = '10px solid #C53994';
   const emptyBorder = '10px solid transparent';
 
@@ -34,6 +39,57 @@ OTLayout = (layoutContainer) => {
 
   let mostActiveSpeakerId = null;
   let highlightEnabled = true;
+
+
+  const getFixedLayoutDimension = (numberOfStreams) => fixedLayoutDimensions[numberOfStreams];
+
+  const getDynamicLayoutDimensions = (numberOfStreams) => {
+    const { width: containerWidth, height: containerHeight } = layoutContainerElement.getBoundingClientRect();
+    const containerArea = containerWidth * containerHeight;
+
+    const bestDimension = {
+      efficiency: 0,
+      width: 0,
+      height: 0,
+    };
+
+    for (let row = 1; row <= numberOfStreams; row += 1) {
+      for (let column = 1; column <= numberOfStreams; column += 1) {
+        if (row * column < numberOfStreams) {
+          continue;
+        }
+
+        const elementWidth = containerWidth / column;
+        const elementHeight = containerHeight / row;
+        const elementAspectRatio = elementWidth / elementHeight;
+
+        let resizedWidth = elementWidth;
+        let resizedHeight = elementHeight;
+        if (config.aspectRatio < elementAspectRatio) {
+          // Fit Height
+          resizedWidth = config.aspectRatio * elementHeight;
+        } else {
+          // Fit Width
+          resizedHeight = elementWidth / config.aspectRatio;
+        }
+
+        const resizedArea = resizedWidth * resizedHeight;
+        const totalArea = resizedArea * numberOfStreams;
+        const efficiency = totalArea / containerArea;
+
+        if (efficiency > bestDimension.efficiency) {
+          bestDimension.efficiency = efficiency;
+          bestDimension.width = resizedWidth;
+          bestDimension.height = resizedHeight;
+        }
+      }
+    }
+
+    return {
+      width: bestDimension.width,
+      height: bestDimension.height,
+    };
+  };
 
   const adjustHighlight = () => {
     const childNodes = layoutContainerElement.childNodes;
@@ -77,7 +133,7 @@ OTLayout = (layoutContainer) => {
     // Fill children into position
     const positionedChildren = [];
     const numberOfStreams = Math.min(numberOfActiveSpeakers, positions.length);
-    const layoutDimension = layoutDimensions[numberOfStreams];
+    const layoutDimension = getDynamicLayoutDimensions(numberOfStreams);
 
     for (let i = 0; i < positions.length; i += 1) {
       const speakerId = positions[i];
@@ -86,8 +142,6 @@ OTLayout = (layoutContainer) => {
           // Update Style
           children[j].node.setAttribute('style', `display: flex; width: ${layoutDimension.width}; height: ${layoutDimension.height}`);
           children[j].node.style.display = 'flex';
-          children[j].node.style.width = layoutDimensions.width;
-          children[j].node.style.height = layoutDimension.height;
 
           // Fill into position
           positionedChildren.push(children[j]);
