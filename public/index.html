@@ -60,16 +60,6 @@
           <button id="connect" class="Vlt-btn Vlt-btn--primary" onclick="initializeSession()">Connect to Session</button>
         </div>
 
-        <div id="speaker-control" style="margin-bottom: 16px;">
-          <label for="name" class="Vlt-label">Speaker Control</label>
-          <span>Max Active Speakers:</span>
-          <span id="numberOfActiveSpeakersText" style="margin-left: 4px;">2</span>
-        </div>
-        <input id="numberOfActiveSpeakers" style="margin-bottom: 16px; width: 100%; "
-          type="range" min="1" max="20" value="2" class="slider"
-          onchange="changeNumberOfActiveSpeakers()"
-          oninput="changeNumberOfActiveSpeakersText()" />
-
         <div>Pin Speakers</div>
         <div id="speaker-list" style="margin-bottom: 16px; padding: 16px; border: 1px solid #c2c4cc; border-radius: 5px; background-color: #fff;"></div>
       </div>
@@ -508,16 +498,6 @@
           document.getElementById('button-video-enable').classList.remove('Vlt-btn--primary');
           document.getElementById('button-video-enable').classList.add('Vlt-btn--tertiary');
         }
-      }
-
-      function changeNumberOfActiveSpeakersText() {
-        const numberOfActiveSpeakers = document.getElementById('numberOfActiveSpeakers').value;
-        document.getElementById('numberOfActiveSpeakersText').innerText = numberOfActiveSpeakers;
-      }
-
-      function changeNumberOfActiveSpeakers() {
-        const numberOfActiveSpeakers = document.getElementById('numberOfActiveSpeakers').value;
-        otSpeech.setNumberOfActiveSpeakers(numberOfActiveSpeakers);
       }
       
       waitForReady(() => {
