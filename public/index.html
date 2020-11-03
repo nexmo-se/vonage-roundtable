@@ -21,6 +21,23 @@
     <div style="position: relative; display: flex; flex: 1; height: 100vh; flex-direction: column; background-color: black; overflow-y: scroll;">
       <div id="screenContainer" style="position: relative; display: flex; width: 100%; height: auto; background-color: black;"></div>
       <div id="layoutContainer" style="position: relative; display: flex; width: 100%; height: 100vh; background-color: black;"></div>
+
+      <div id="stream-control" style="width: 100%; position: absolute; bottom: 50px; left: 0; right: 0;" hidden>
+        <div style="display: flex; flex-direction: row; justify-content: center; align-items: center;">
+          <button id="button-video-enable" class="Vlt-btn Vlt-btn--large Vlt-btn--primary Vlt-btn--icon" onclick="toggleVideoEnable()">
+            <svg><use xlink:href="volta-icons.svg#Vlt-icon-video-negative" /></svg>
+          </button>
+          <button id="button-audio-enable" class="Vlt-btn Vlt-btn--large Vlt-btn--primary Vlt-btn--icon" onclick="toggleAudioEnable()">
+            <svg><use xlink:href="volta-icons.svg#Vlt-icon-microphone-full" /></svg>
+          </button>
+          <button id="button-screen-share" class="Vlt-btn Vlt-btn--large Vlt-btn--tertiary Vlt-btn--icon" onclick="toggleScreen()">
+            <svg><use xlink:href="volta-icons.svg#Vlt-icon-screen-share-full" /></svg>
+          </button>
+          <button id="button-cycle-camera" class="Vlt-btn Vlt-btn--large Vlt-btn--tertiary Vlt-btn--icon" onclick="cycleCamera()">
+            <svg><use xlink:href="volta-icons.svg#Vlt-icon-camera-switch-full" /></svg>
+          </button>
+        </div>
+      </div>
     </div>
 
     <div style="display: flex; flex-direction: column; width: 300px; padding: 16px; overflow-y: scroll; background-color: #e6e6e6;">
@@ -41,47 +58,6 @@
 
         <div id="session-control" style="margin-bottom: 16px;">
           <button id="connect" class="Vlt-btn Vlt-btn--primary" onclick="initializeSession()">Connect to Session</button>
-        </div>
-
-        <div id="publisher-control" style="margin-bottom: 16px;" hidden>
-          <label>Camera</label>
-          <div style="margin-bottom: 8px;">
-            <button id="publish-camera" class="Vlt-btn Vlt-btn--small Vlt-btn--secondary" onclick="startCamera()">Publish</button>
-            <button id="unpublish-camera" class="Vlt-btn Vlt-btn--small Vlt-btn--destructive" onclick="stopCamera()" disabled>Unpublish</button>
-          </div>
-
-          <label>Screen</label>
-          <div>
-            <button id="publish-screen" class="Vlt-btn Vlt-btn--small Vlt-btn--secondary" onclick="startScreen()">Publish</button>
-            <button id="unpublish-screen" class="Vlt-btn Vlt-btn--small Vlt-btn--destructive" onclick="stopScreen()" disabled>Unpublish</button>
-          </div>
-        </div>
-
-        <div id="av-control" style="margin-bottom: 16px;" hidden>
-          <label for="name" class="Vlt-label">Audio/Video Control</label>
-          <div style="margin-bottom: 16px;">
-            <button id="cycle-camera" class="Vlt-btn Vlt-btn--small Vlt-btn--secondary" onclick="cycleCamera()">Cycle Camera</button>
-          </div>
-
-          <div class="Vlt-checkbox">
-            <label for="audioDisabled">
-              <span class="Vlt-checkbox__button">
-                <input type="checkbox" id="audioDisabled" onchange="toggleAudioDisable()"/>
-                <span class="Vlt-checkbox__icon"></span>
-              </span>
-              <label for="audioDisabled">Disable Audio</label>
-            </label>
-          </div>
-
-          <div class="Vlt-checkbox">
-            <label for="videoDisabled">
-              <span class="Vlt-checkbox__button">
-                <input type="checkbox" id="videoDisabled" onchange="toggleVideoDisable()"/>
-                <span class="Vlt-checkbox__icon"></span>
-              </span>
-              <label for="videoDisabled">Disable Video</label>
-            </label>
-          </div>
         </div>
 
         <div id="highlight-control" style="margin-bottom: 16px;">
@@ -128,6 +104,9 @@
       let OTSession;
       let cameraPublisher = null;
       let screenPublisher = null;
+
+      let enableAudio = true; // Assume not > 16 speakers
+      let enableVideo = true; // Assume not > 16 speakers
 
 
       // Debouncing logic for handling window resize layout adjustment
@@ -256,7 +235,23 @@
             
             console.log('Session Ready');
             document.getElementById('session-control').hidden = true;
-            document.getElementById('publisher-control').hidden = false;
+            document.getElementById('stream-control').hidden = false;
+            
+            if (enableAudio) {
+              document.getElementById('button-audio-enable').classList.remove('Vlt-btn--tertiary');
+              document.getElementById('button-audio-enable').classList.add('Vlt-btn--primary');
+            } else {
+              document.getElementById('button-audio-enable').classList.remove('Vlt-btn--primary');
+              document.getElementById('button-audio-enable').classList.add('Vlt-btn--tertiary');
+            }
+            
+            if (enableVideo) {
+              document.getElementById('button-video-enable').classList.remove('Vlt-btn--tertiary');
+              document.getElementById('button-video-enable').classList.add('Vlt-btn--primary');
+            } else {
+              document.getElementById('button-video-enable').classList.remove('Vlt-btn--primary');
+              document.getElementById('button-video-enable').classList.add('Vlt-btn--tertiary');
+            }
 
             // Automatically start publishing camera
             startCamera();
@@ -286,6 +281,23 @@
         const mappedId = insertDefaultUI ? otSpeech.getSubscriberIdByStreamId(mostActiveSpeakerId) : mostActiveSpeakerId;
         updateHighlight(mappedId);
       }
+
+      function toggleCamera() {
+        if (cameraPublisher == null) {
+          startCamera();
+        } else {
+          stopCamera();
+        }
+      }
+
+      function toggleScreen() {
+        console.log('egege')
+        if (screenPublisher == null) {
+          startScreen();
+        } else {
+          stopScreen();
+        }
+      }
       
       async function startCamera() {
         stopCamera();
@@ -295,11 +307,10 @@
             alert('Please provide a name');
             return;
           }
-          document.getElementById('publish-camera').disabled = true;
 
           cameraPublisher = OT.initPublisher('publisherContainer', {
-            publishAudio: true,
-            publishVideo: true,
+            publishAudio: enableAudio,
+            publishVideo: enableVideo,
             fitMode: 'contain',
             insertMode: 'append',
             name,
@@ -317,10 +328,7 @@
                 handleError(error);
                 return;
               }
-
-              document.getElementById('unpublish-camera').disabled = false;
-              document.getElementById('av-control').hidden = false;
-            })
+            });
           });
         } catch (error) {
           handleError(error);
@@ -332,10 +340,6 @@
           OTSession.unpublish(cameraPublisher);
           cameraPublisher = null;
         }
-
-        document.getElementById('publish-camera').disabled = false;
-        document.getElementById('unpublish-camera').disabled = true;
-        document.getElementById('av-control').hidden = true;
       }
 
       function cycleCamera() {
@@ -352,7 +356,6 @@
             alert('Please provide a name');
             return;
           }
-          document.getElementById('publish-screen').disabled = true;
 
           screenPublisher = OT.initPublisher('publisherContainerScreen', {
             videoSource: 'screen',
@@ -374,7 +377,8 @@
                 return;
               }
 
-              document.getElementById('unpublish-screen').disabled = false;
+              document.getElementById('button-screen-share').classList.remove('Vlt-btn--tertiary');
+              document.getElementById('button-screen-share').classList.add('Vlt-btn--primary');
             })
           });
         } catch (error) {
@@ -388,8 +392,8 @@
           screenPublisher = null;
         }
 
-        document.getElementById('publish-screen').disabled = false;
-        document.getElementById('unpublish-screen').disabled = true;
+        document.getElementById('button-screen-share').classList.remove('Vlt-btn--primary');
+        document.getElementById('button-screen-share').classList.add('Vlt-btn--tertiary');
       }
 
       function updateSpeakerPins() {
@@ -437,16 +441,30 @@
         }
       }
 
-      function toggleAudioDisable(e) {
-        const checkbox = document.getElementById('audioDisabled');
-        const shouldEnableAudio = !checkbox.checked;
-        cameraPublisher.publishAudio(shouldEnableAudio);
+      function toggleAudioEnable() {
+        enableAudio = !enableAudio;
+        cameraPublisher.publishAudio(enableAudio);
+        
+        if (enableAudio) {
+          document.getElementById('button-audio-enable').classList.remove('Vlt-btn--tertiary');
+          document.getElementById('button-audio-enable').classList.add('Vlt-btn--primary');
+        } else {
+          document.getElementById('button-audio-enable').classList.remove('Vlt-btn--primary');
+          document.getElementById('button-audio-enable').classList.add('Vlt-btn--tertiary');
+        }
       }
 
-      function toggleVideoDisable(e) {
-        const checkbox = document.getElementById('videoDisabled');
-        const shouldEnableVideo = !checkbox.checked;
-        cameraPublisher.publishVideo(shouldEnableVideo);
+      function toggleVideoEnable() {
+        enableVideo = !enableVideo;
+        cameraPublisher.publishVideo(enableVideo);
+        
+        if (enableVideo) {
+          document.getElementById('button-video-enable').classList.remove('Vlt-btn--tertiary');
+          document.getElementById('button-video-enable').classList.add('Vlt-btn--primary');
+        } else {
+          document.getElementById('button-video-enable').classList.remove('Vlt-btn--primary');
+          document.getElementById('button-video-enable').classList.add('Vlt-btn--tertiary');
+        }
       }
 
       function toggleHighlightEnabled(e) {
