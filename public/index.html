@@ -49,28 +49,15 @@
         <div id="publisherContainer" style="margin-bottom: 16px;"></div>
         <div id="publisherContainerScreen" style="margin-bottom: 16px; display: none;"></div>
 
-        <div class="Vlt-form__element">
+        <div id="name-control" class="Vlt-form__element" hidden>
           <label for="name" class="Vlt-label">Display Name</label>
           <div class="Vlt-input">
             <input type="text" id="name" />
           </div>
         </div>
 
-        <div id="session-control" style="margin-bottom: 16px;">
+        <div id="session-control" style="margin-bottom: 16px;" hidden>
           <button id="connect" class="Vlt-btn Vlt-btn--primary" onclick="initializeSession()">Connect to Session</button>
-        </div>
-
-        <div id="highlight-control" style="margin-bottom: 16px;">
-          <div class="Vlt-checkbox">
-            <label for="videoDisabled">
-              <span class="Vlt-checkbox__button">
-                <input type="checkbox" id="highlightEnabled" onchange="toggleHighlightEnabled()" checked />
-                <span class="Vlt-checkbox__icon"></span>
-              </span>
-              <label for="highlightEnabled">Enable Speaker Highlight</label>
-            </label>
-          </div>
-        </div>
         </div>
 
         <div id="speaker-control" style="margin-bottom: 16px;">
@@ -95,18 +82,20 @@
       const insertDefaultUI = true; // Whether to use default UI from Opentok or add manually
       const layoutContainer = document.getElementById("layoutContainer");
 
-      const { adjustLayout, enableHighlight, updateHighlight } = OTLayout(layoutContainer);
-      const otSpeech = OTSpeech({ numberOfActiveSpeakers: initialNumberOfActiveSpeakers });
+      let { adjustLayout, updateHighlight } = OTLayout(layoutContainer);
+      let otSpeech = OTSpeech({ numberOfActiveSpeakers: initialNumberOfActiveSpeakers });
       otSpeech.setOnActiveSpeakerChangeListener(onSpeakerOrderChanged);
       otSpeech.setOnMostActiveSpeakerChangeListener(onMostActiveSpeakerChanged);
 
 
       let OTSession;
+      let tokenParam = null;
       let cameraPublisher = null;
       let screenPublisher = null;
 
       let enableAudio = true; // Assume not > 16 speakers
       let enableVideo = true; // Assume not > 16 speakers
+      let unpublishDelay = 30; // 30s of disable audio + video to consider unpublishing
 
 
       // Debouncing logic for handling window resize layout adjustment
@@ -122,12 +111,65 @@
       }
       // Listen for Window Resize
       window.addEventListener('resize', () => notifySpeakerChange());
+      
+      function waitForReady(callback) {
+        /in/.test(document.readyState) ? setTimeout('waitForReady('+callback+')', 9) : callback();
+      };
+
+      function getParams() {
+        const searchString = window.location.search || '?';
+        const query = searchString.slice(1);
+        const components = query.split(/&/g);
+        const params = {};
+
+        for (let i = 0; i < components.length; i += 1) {
+          const component = components[i];
+          const splitIndex = component.indexOf('=');
+          if (splitIndex >= 0) {
+            const rawKey = component.slice(0, splitIndex);
+            const rawValue = component.slice(splitIndex + 1);
+            console.log(rawKey);
+            console.log(rawValue);
+            const key = decodeURIComponent(rawKey);
+            const value = decodeURIComponent(rawValue);
+            params[key] = value;
+          }
+        }
+        return params;
+      };
 
       function handleError(error) {
         console.log(error);
       }
 
       async function getCredentials() {
+        if (tokenParam != null && tokenParam !== '') {
+          // Decode Token
+          const b64Encoded = tokenParam.slice(4);
+          const buffer = atob(b64Encoded);
+          const b64Decoded = buffer.toString('ascii');
+
+          // Read Decoded Data for Api Key and Session Id
+          const components = b64Decoded.split(/&|:/g);
+          const data = {};
+          for (let i = 0; i < components.length; i += 1) {
+            const component = components[i];
+            const firstEqualIndex = component.indexOf('=');
+            if (firstEqualIndex <= 0) {
+              continue;
+            }
+
+            const key = component.slice(0, firstEqualIndex);
+            const value = component.slice(firstEqualIndex + 1);
+            data[key] = value;
+          }
+
+          return Promise.resolve({
+            apiKey: data.partner_id,
+            sessionId: data.session_id,
+            token: tokenParam,
+          });
+        }
         try {
           const url = `/token`;
           const response = await fetch(url);
@@ -151,6 +193,7 @@
             return;
           }
           document.getElementById('name').disabled = true;
+          document.getElementById('name-control').hidden = true;
 
           // Get Credentials
           const credentials = await getCredentials();
@@ -467,12 +510,6 @@
         }
       }
 
-      function toggleHighlightEnabled(e) {
-        const checkbox = document.getElementById('highlightEnabled');
-        const shouldEnableHighlight = checkbox.checked;
-        enableHighlight(shouldEnableHighlight);
-      }
-
       function changeNumberOfActiveSpeakersText() {
         const numberOfActiveSpeakers = document.getElementById('numberOfActiveSpeakers').value;
         document.getElementById('numberOfActiveSpeakersText').innerText = numberOfActiveSpeakers;
@@ -483,7 +520,35 @@
         otSpeech.setNumberOfActiveSpeakers(numberOfActiveSpeakers);
       }
       
+      waitForReady(() => {
+        const params = getParams();
+        let {
+          name, token, highlight,
+          max, ratio, unpublish_delay,
+        } = params;
 
+        const numberOfActiveSpeakers = parseInt((max || '2'), 10);
+        const aspectRatio = ratio === '16_9' ? 16 / 9 : 4 / 3;
+        highlight = (highlight || 'true').toLowerCase() === 'true';
+        tokenParam = token;
+        unpublishDelay = parseInt((unpublish_delay || '30'), 10);
+
+        ({ adjustLayout, updateHighlight } = OTLayout(layoutContainer, { aspectRatio, highlight }));
+        otSpeech = OTSpeech({ numberOfActiveSpeakers });
+        otSpeech.setOnActiveSpeakerChangeListener(onSpeakerOrderChanged);
+        otSpeech.setOnMostActiveSpeakerChangeListener(onMostActiveSpeakerChanged);
+
+        if (name != null && name != '') {
+          document.getElementById('name').value = name;
+          document.getElementById('session-control').hidden = true;
+          document.getElementById('name-control').hidden = true;
+          initializeSession();
+        } else {
+          document.getElementById('session-control').hidden = false;
+          document.getElementById('name-control').hidden = false;
+        }
+        
+      })
     </script>
   </body>
 </html>

@@ -1,6 +1,7 @@
 OTLayout = (layoutContainer, options) => {
   const config = Object.assign({
     aspectRatio: 16 / 9, // Aspect Ratio
+    highlight: true,
   }, options);
 
   const fixedLayoutDimensions = [
@@ -38,7 +39,6 @@ OTLayout = (layoutContainer, options) => {
   layoutContainerElement.style['align-items'] = 'center';
 
   let mostActiveSpeakerId = null;
-  let highlightEnabled = true;
 
 
   const getFixedLayoutDimension = (numberOfStreams) => fixedLayoutDimensions[numberOfStreams];
@@ -100,14 +100,14 @@ OTLayout = (layoutContainer, options) => {
       childNode.style.border = emptyBorder;
 
       // Add border to most active speaker
-      if (highlightEnabled && childNode.id === mostActiveSpeakerId) {
+      if (config.highlight && childNode.id === mostActiveSpeakerId) {
         childNode.style.border = border;
       }
     }
   }
 
   const enableHighlight = (enabled) => {
-    highlightEnabled = enabled;
+    config.highlight = enabled;
     adjustHighlight();
   }
 
