@@ -367,6 +367,8 @@ OTSpeech = (options) => {
 
   };
 
+  const notifySpeakerChange = () => checkActiveSpeakerChange(true);
+
   return {
     // Listeners
     setOnActiveSpeakerChangeListener,
@@ -388,6 +390,7 @@ OTSpeech = (options) => {
     subscribeToVideo,
     addAudioLevel,
     setSpeakerPin,
+    notifySpeakerChange,
 
     // Results
     getOrderedChannels,

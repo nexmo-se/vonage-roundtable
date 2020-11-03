@@ -129,6 +129,21 @@
       let cameraPublisher = null;
       let screenPublisher = null;
 
+
+      // Debouncing logic for handling window resize layout adjustment
+      let notifySpeakerChangeTimeout = null;
+      function notifySpeakerChange() {
+        // Clear timeout if exist
+        if (notifySpeakerChangeTimeout != null) {
+          clearTimeout(notifySpeakerChangeTimeout);
+        }
+
+        // Set new timeout for actual adjustment
+        notifySpeakerChangeTimeout = setTimeout(() => otSpeech.notifySpeakerChange(), 500);
+      }
+      // Listen for Window Resize
+      window.addEventListener('resize', () => notifySpeakerChange());
+
       function handleError(error) {
         console.log(error);
       }
@@ -187,6 +202,8 @@
 
               // Update Speaker Pins (new joiner)
               updateSpeakerPins()
+
+              otSpeech.notifySpeakerChange();
             });
 
             // Note: Use this only if InsertDefaultUI is false
