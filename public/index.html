@@ -49,12 +49,12 @@
       </div>
     </div>
 
-    <div id="sidebar" style="display: flex; flex-direction: column; width: 400px; padding: 16px; overflow-y: scroll; background-color: #e6e6e6;">
+    <div id="sidebar" style="display: flex; flex-direction: column; width: 400px; height: 100%; padding: 16px; background-color: #e6e6e6;">
       <div class="Vlt-sidenav__block Vlt-sidenav__block--logo">
         <img class="Vlt-sidenav__elem--full" src="vonage-logo.svg"/>
       </div>
 
-      <div style="width: 100%">
+      <div style="width: 100%; display: flex; flex-direction: column; flex: 1;">
         <div id="publisherContainer" style="margin-bottom: 16px;"></div>
         <div id="publisherContainerScreen" style="margin-bottom: 16px; display: none;"></div>
 
@@ -69,19 +69,34 @@
           <button id="connect" class="Vlt-btn Vlt-btn--primary" onclick="initializeSession()">Connect to Session</button>
         </div>
 
-        <div id="speaker-control" style="margin-bottom: 16px;" hidden>
-          <div class="Vlt-tabs">
+        <div id="speaker-control" style="margin-bottom: 16px; width: 100%; display: flex; flex-direction: column; flex: 1;" hidden>
+          <div class="Vlt-tabs" style="flex: 1; display: flex; flex-direction: column; width: 100%;" >
             <div class="Vlt-tabs__header Vlt-tabs__header--bordered">
               <div class="Vlt-tabs__link Vlt-tabs__link_active"><svg><use xlink:href="volta-icons.svg#Vlt-icon-chat-2"></use></svg><span>Chat</span></div>
               <div class="Vlt-tabs__link"><svg><use xlink:href="volta-icons.svg#Vlt-icon-group-2"></use></svg><span>Participants</span></div>
             </div>
-            <div class="Vlt-tabs__content">
-              <div class="Vlt-tabs__panel Vlt-tabs__panel_active">
-                <div>
-                  Meow
+            <div class="Vlt-tabs__content" style="flex: 1;">
+              <div class="Vlt-tabs__panel Vlt-tabs__panel_active" style="height: 100%;">
+                <div style="width: 100%; display: flex; flex-direction: column; height: 100%">
+                  <div style="width: 100%; display: flex; flex: 1; flex-direction: column;">
+                    <div id="chat-container" style="width: 100%; height: 100%; display: flex; flex-direction: column; overflow-y: scroll;">
+                    </div>
+                  </div>
+
+                  <div style="width: 100%; padding-top: 32px; padding-bottom: 16px; display: flex; flex-direction: row; align-items: center;">
+                    <div class="Vlt-input" style="flex: 1; margin-right: 16px;">
+                      <input type="text" id="chat-text" placeholder="Type a message" />
+                    </div>
+
+                    <button id="chat-button" class="Vlt-btn Vlt-btn--large Vlt-btn--secondary Vlt-btn--icon" style="margin: 0;" onclick="sendChat()">
+                      <svg><use xlink:href="volta-icons.svg#Vlt-icon-message-read" /></svg>
+                    </button>
+                  </div>
+                  
                 </div>
               </div>
-              <div class="Vlt-tabs__panel">
+
+              <div class="Vlt-tabs__panel" style="height: 100%;">
                 <div id="speaker-list" style="padding: 16px; border: 1px solid #c2c4cc; border-radius: 5px; background-color: #fff;"></div>
               </div>
           
@@ -274,6 +289,57 @@
                 // Remove Child Element
                 containerElement.removeChild(childNode);
               }
+            }
+          });
+
+          OTSession.on('signal', (e) => {
+            const { type, data } = e;
+            if (type === 'signal:chat') {
+              const { name, text } = JSON.parse(data);
+
+              const row = document.createElement('div');
+              row.style.width = '100%';
+              row.style.display = 'flex';
+              row.style.flexDirection = 'row';
+
+              const bubble = document.createElement('div');
+              bubble.style.flexDirection = 'column';
+              bubble.style.justifyContent = 'center';
+              bubble.style.minWidth = '32px';
+              bubble.style.maxWidth = '80%';
+              bubble.style.paddingLeft = '8px';
+              bubble.style.paddingRight = '8px';
+              bubble.style.paddingTop = '4px';
+              bubble.style.paddingBottom = '4px';
+              bubble.style.marginBottom = '8px';
+              bubble.style.borderRadius = '16px';
+              bubble.style.color = '#ffffff';
+              bubble.innerText = text;
+
+              const isSelf = name === document.getElementById('name').value;
+              if (isSelf) {
+                row.style.flexDirection = 'row-reverse';
+
+                bubble.style.backgroundColor = '#871fff';
+              } else {
+                bubble.style.backgroundColor = '#767676';
+                bubble.innerHTML = '';
+                
+                const nameDiv = document.createElement('div');
+                nameDiv.innerText = name;
+                nameDiv.style.fontWeight = 'bold';
+
+                const textDiv = document.createElement('div');
+                textDiv.innerText = text;
+
+                bubble.appendChild(nameDiv);
+                bubble.appendChild(textDiv);
+              }
+
+              row.appendChild(bubble);
+              document.getElementById('chat-container').appendChild(row);
+
+              console.log(`${name}${isSelf ? ' (me)' : ''} - ${text}`);
             }
           });
 
@@ -546,6 +612,27 @@
           document.getElementById('button-collapse-sidebar').style.display = 'none';
           document.getElementById('button-expand-sidebar').style.display = 'block';
         }
+      }
+
+      function sendChat() {
+        const text = document.getElementById('chat-text').value;
+        const name = document.getElementById('name').value;
+        OTSession.signal({
+          type: 'chat',
+          data: JSON.stringify({
+            name,
+            text,
+          }),
+        }, (error) => {
+          if (error) {
+            console.error(error);
+            return;
+          }
+
+          // Clear textbox
+          document.getElementById('chat-text').value = '';
+          console.log('Chat sent');
+        });
       }
 
       waitForReady(() => {
