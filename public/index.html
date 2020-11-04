@@ -69,8 +69,10 @@
           <button id="connect" class="Vlt-btn Vlt-btn--primary" onclick="initializeSession()">Connect to Session</button>
         </div>
 
-        <div>Pin Speakers</div>
-        <div id="speaker-list" style="margin-bottom: 16px; padding: 16px; border: 1px solid #c2c4cc; border-radius: 5px; background-color: #fff;"></div>
+        <div id="speaker-control" style="margin-bottom: 16px;" hidden>
+          <div>Pin Speakers</div>
+          <div id="speaker-list" style="padding: 16px; border: 1px solid #c2c4cc; border-radius: 5px; background-color: #fff;"></div>
+        </div>
       </div>
     </div>
 
@@ -276,6 +278,7 @@
             console.log('Session Ready');
             document.getElementById('session-control').hidden = true;
             document.getElementById('stream-control').hidden = false;
+            document.getElementById('speaker-control').hidden = false;
             
             if (enableAudio) {
               document.getElementById('button-audio-enable').classList.remove('Vlt-btn--tertiary');
