@@ -38,9 +38,18 @@
           </button>
         </div>
       </div>
+
+      <div id="sidebar-control" style="position: absolute; right: 20px; top: 20px;">
+        <button id="button-collapse-sidebar" class="Vlt-btn Vlt-btn--large Vlt-btn--white Vlt-btn--icon" style="display: block;" onclick="toggleSidebar()">
+          <svg><use xlink:href="volta-icons.svg#Vlt-icon-expand" /></svg>
+        </button>
+        <button id="button-expand-sidebar" class="Vlt-btn Vlt-btn--large Vlt-btn--white Vlt-btn--icon" style="display: none;" onclick="toggleSidebar()">
+          <svg><use xlink:href="volta-icons.svg#Vlt-icon-collapse" /></svg>
+        </button>
+      </div>
     </div>
 
-    <div style="display: flex; flex-direction: column; width: 300px; padding: 16px; overflow-y: scroll; background-color: #e6e6e6;">
+    <div id="sidebar" style="display: flex; flex-direction: column; width: 300px; padding: 16px; overflow-y: scroll; background-color: #e6e6e6;">
       <div class="Vlt-sidenav__block Vlt-sidenav__block--logo">
         <img class="Vlt-sidenav__elem--full" src="vonage-logo.svg"/>
       </div>
@@ -495,6 +504,23 @@
         } else {
           document.getElementById('button-video-enable').classList.remove('Vlt-btn--primary');
           document.getElementById('button-video-enable').classList.add('Vlt-btn--tertiary');
+        }
+      }
+
+      function toggleSidebar() {
+        const sidebarElement = document.getElementById('sidebar');
+        sidebarElement.hidden = !sidebarElement.hidden;
+        const isHidden = sidebarElement.style.display === 'none';
+        if (isHidden) {
+          // Unhide
+          sidebarElement.style.display = 'flex';
+          document.getElementById('button-collapse-sidebar').style.display = 'block';
+          document.getElementById('button-expand-sidebar').style.display = 'none';
+        } else {
+          // Hide
+          sidebarElement.style.display = 'none';
+          document.getElementById('button-collapse-sidebar').style.display = 'none';
+          document.getElementById('button-expand-sidebar').style.display = 'block';
         }
       }
       
