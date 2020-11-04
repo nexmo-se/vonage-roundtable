@@ -237,9 +237,6 @@
               if (event.stream.videoType !== 'screen') {
                 otSpeech.addSubscriber(subscriber);
               }
-
-              // Update Speaker Pins (new joiner)
-              updateSpeakerPins();
             });
 
             // Note: Use this only if InsertDefaultUI is false
@@ -278,9 +275,6 @@
                 containerElement.removeChild(childNode);
               }
             }
-
-            // Update Speaker Pins (new leaver)
-            updateSpeakerPins()
           });
 
           OTSession.connect(token, (error) => {
@@ -330,6 +324,7 @@
         const mappedPositions = positions.map(position => insertDefaultUI ? otSpeech.getSubscriberIdByStreamId(position) : position)
           .filter(subscriberId => subscriberId != null);
         adjustLayout(mappedPositions, numberOfActiveSpeakers);
+        updateSpeakerPins();
       }
 
       // This callback/listener will handle the most active speaker changed event
@@ -458,7 +453,16 @@
       function updateSpeakerPins() {
         // Fill Available Speaker List
         const speakerElements = otSpeech.getOrderedChannels()
-          .sort((a, b) => (a.subscriber.stream || {}).name.toLowerCase() < (b.subscriber.stream || {}).name.toLowerCase() ? -1 : 1) // sort by speaker name (case-insensitive)
+          .sort((a, b) => {
+            // Pinned on top
+            if (a.pinned && !b.pinned) {
+              return -1;
+            } else if (b.pinned && !a.pinned) {
+              return 1;
+            }
+
+            return (a.subscriber.stream || {}).name.toLowerCase() < (b.subscriber.stream || {}).name.toLowerCase() ? -1 : 1; // sort by speaker name (case-insensitive)
+          })
           .map((speaker) => {
             // Speaker Div
             const speakerElement = document.createElement('div');
@@ -473,7 +477,7 @@
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
             checkbox.checked = speaker.pinned;
-            checkbox.onchange = () => otSpeech.setSpeakerPin(speaker.id, checkboxElement.checked); // Update Speaker Pin when check/uncheck
+            checkbox.onchange = () => otSpeech.setSpeakerPin(speaker.id, checkbox.checked); // Update Speaker Pin when check/uncheck
 
             // Icon
             const span2 = document.createElement('span');

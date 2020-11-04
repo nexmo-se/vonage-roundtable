@@ -332,6 +332,8 @@ OTSpeech = (options) => {
     if (channels[channelId] != null) {
       channels[channelId].pinned = pinned;
     }
+
+    checkActiveSpeakerChange(true);
   };
 
   const setOnActiveSpeakerChangeListener = (listener) => {
