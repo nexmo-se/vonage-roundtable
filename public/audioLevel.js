@@ -287,12 +287,16 @@ OTSpeech = (options) => {
       // Add Audio Level
       addAudioLevel(subscriber.stream.id, e.audioLevel);
     });
+
+    checkActiveSpeakerChange(true);
   };
 
   const removeSubscriber = (subscriber) => {
     console.log(`Removing Subscriber ${subscriber.stream.id}`);
     delete channels[subscriber.stream.id];
     delete rawAudioLevels[subscriber.stream.id];
+
+    checkActiveSpeakerChange(true);
   };
 
   const removeSubscriberByStreamId = (streamId) => {
