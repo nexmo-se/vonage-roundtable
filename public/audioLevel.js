@@ -325,7 +325,7 @@ OTSpeech = (options) => {
   }
 
   const getSubscriberIdByStreamId = (streamId) => {
-    return getSubscriberByStreamId(streamId).id;
+    return (getSubscriberByStreamId(streamId) || {}).id;
   }
 
   const setSpeakerPin = (channelId, pinned) => {
