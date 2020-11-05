@@ -84,8 +84,8 @@
                   </div>
 
                   <div style="width: 100%; padding-top: 32px; padding-bottom: 16px; display: flex; flex-direction: row; align-items: center;">
-                    <div class="Vlt-input" style="flex: 1; margin-right: 16px;">
-                      <input type="text" id="chat-text" placeholder="Type a message" />
+                    <div class="Vlt-textarea" style="flex: 1; margin-right: 16px;">
+                      <textarea rows="1" id="chat-text" placeholder="Type a message" onkeyup="onChatEnter(event)"></textarea>
                     </div>
 
                     <button id="chat-button" class="Vlt-btn Vlt-btn--large Vlt-btn--secondary Vlt-btn--icon" style="margin: 0;" onclick="sendChat()">
@@ -614,9 +614,22 @@
         }
       }
 
+      function onChatEnter(event) {
+        if (event.key === 'Enter') {
+          if (!event.shiftKey) {
+            sendChat();
+          }
+        }
+      }
+
       function sendChat() {
         const text = document.getElementById('chat-text').value;
         const name = document.getElementById('name').value;
+
+        if (text == null || text === '') {
+          return;
+        }
+
         OTSession.signal({
           type: 'chat',
           data: JSON.stringify({
