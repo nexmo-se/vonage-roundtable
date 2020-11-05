@@ -212,7 +212,7 @@
         }
       }
 
-      async function initializeSession(retry = false) {
+      async function initializeSession() {
         try {
           // Disable button
           document.getElementById("connect").disabled = true;
@@ -299,7 +299,7 @@
             if (reason === 'networkDisconnected') {
               console.log('Network disconnected, attempting reconnection');
               OTSession.disconnect();
-              connect(true, token);
+              connect(true);
             }
           });
 
@@ -354,7 +354,7 @@
             }
           });
 
-          connect(retry);
+          connect(false);
 
           return Promise.resolve();
         } catch (error) {
@@ -363,7 +363,7 @@
         }
       }
 
-      async function connect(retry = false) {
+      async function connect(retry) {
         try {
           const credentials = await getCredentials();
           OTSession.connect(credentials.token, (error) => {
