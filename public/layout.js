@@ -30,6 +30,7 @@ OTLayout = (layoutContainer, options) => {
 
   const border = '10px solid #C53994';
   const emptyBorder = '10px solid transparent';
+  const selfSpeakerIds = [];
 
   const layoutContainerElement = layoutContainer;
   layoutContainerElement.style.display = 'flex';
@@ -99,6 +100,11 @@ OTLayout = (layoutContainer, options) => {
       // Remove border from everyone
       childNode.style.border = emptyBorder;
 
+      // Ignore border if there's only 2 child nodes
+      if (childNodes.length <= 2) {
+        continue;
+      }
+
       // Add border to most active speaker
       if (config.highlight && childNode.id === mostActiveSpeakerId) {
         childNode.style.border = border;
@@ -128,15 +134,22 @@ OTLayout = (layoutContainer, options) => {
 
       children.push({ id: childNode.id, node: childNode, filled: false });
     }
-    
 
     // Fill children into position
     const positionedChildren = [];
-    const numberOfStreams = Math.min(numberOfActiveSpeakers, positions.length);
+    const combinedSpeakerPositions = [...selfSpeakerIds, ...positions];
+
+    console.log(positions.length);
+    console.log(selfSpeakerIds.length);
+    console.log(combinedSpeakerPositions.length);
+    console.log(numberOfActiveSpeakers);
+    console.log('=============================');
+
+    const numberOfStreams = Math.min(numberOfActiveSpeakers, combinedSpeakerPositions.length);
     const layoutDimension = getDynamicLayoutDimensions(numberOfStreams);
 
-    for (let i = 0; i < positions.length; i += 1) {
-      const speakerId = positions[i];
+    for (let i = 0; i < numberOfStreams; i += 1) {
+      const speakerId = combinedSpeakerPositions[i];
       for (let j = 0; j < children.length; j += 1) {
         if (children[j].id === speakerId) {
           // Update Style
@@ -169,9 +182,28 @@ OTLayout = (layoutContainer, options) => {
     adjustHighlight();
   };
 
+  const addSelfSpeakerId = (speakerId) => {
+    const index = selfSpeakerIds.indexOf(speakerId);
+    if (index === -1) {
+      selfSpeakerIds.push(speakerId);
+      selfSpeakerIds.sort((a, b) => a.toLowerCase() < b.toLowerCase() ? -1 : 1);
+    }
+  };
+
+  const removeSelfSpeakerId = (speakerId) => {
+    const index = selfSpeakerIds.indexOf(speakerId);
+    if (index >= 0) {
+      selfSpeakerIds.splice(index, 1);
+      selfSpeakerIds.sort((a, b) => a.toLowerCase() < b.toLowerCase() ? -1 : 1);
+    }
+  };
+
   return {
     adjustLayout,
     updateHighlight,
     enableHighlight,
+
+    addSelfSpeakerId,
+    removeSelfSpeakerId,
   };
 };

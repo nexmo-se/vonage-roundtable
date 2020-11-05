@@ -55,7 +55,6 @@
       </div>
 
       <div style="width: 100%; display: flex; flex-direction: column; flex: 1;">
-        <div id="publisherContainer" style="margin-bottom: 16px;"></div>
         <div id="publisherContainerScreen" style="margin-bottom: 16px; display: none;"></div>
 
         <div id="name-control" class="Vlt-form__element" hidden>
@@ -113,7 +112,7 @@
       const insertDefaultUI = true; // Whether to use default UI from Opentok or add manually
       const layoutContainer = document.getElementById("layoutContainer");
 
-      let { adjustLayout, updateHighlight } = OTLayout(layoutContainer);
+      let { adjustLayout, updateHighlight, addSelfSpeakerId, removeSelfSpeakerId } = OTLayout(layoutContainer);
       let otSpeech = OTSpeech({ numberOfActiveSpeakers: initialNumberOfActiveSpeakers });
       otSpeech.setOnActiveSpeakerChangeListener(onSpeakerOrderChanged);
       otSpeech.setOnMostActiveSpeakerChangeListener(onMostActiveSpeakerChanged);
@@ -428,7 +427,7 @@
             return;
           }
 
-          cameraPublisher = OT.initPublisher('publisherContainer', {
+          cameraPublisher = OT.initPublisher('layoutContainer', {
             publishAudio: enableAudio,
             publishVideo: enableVideo,
             fitMode: 'contain',
@@ -441,7 +440,7 @@
               handleError(error);
               return;
             }
-            
+
             // Publish to Session
             OTSession.publish(cameraPublisher, (err) => {
               if (err) {
@@ -449,6 +448,13 @@
                 return;
               }
             });
+          });
+
+          cameraPublisher.on('streamCreated', (event) => {
+              // Add to screen
+              const speakerId = insertDefaultUI ? cameraPublisher.id : event.stream.id;
+              addSelfSpeakerId(speakerId);
+              otSpeech.notifySpeakerChange();
           });
         } catch (error) {
           handleError(error);
@@ -663,7 +669,7 @@
         tokenParam = token;
         unpublishDelay = parseInt((unpublish_delay || '30'), 10);
 
-        ({ adjustLayout, updateHighlight } = OTLayout(layoutContainer, { aspectRatio, highlight }));
+        ({ adjustLayout, updateHighlight, addSelfSpeakerId, removeSelfSpeakerId } = OTLayout(layoutContainer, { aspectRatio, highlight }));
         otSpeech = OTSpeech({ numberOfActiveSpeakers });
         otSpeech.setOnActiveSpeakerChangeListener(onSpeakerOrderChanged);
         otSpeech.setOnMostActiveSpeakerChangeListener(onMostActiveSpeakerChanged);
