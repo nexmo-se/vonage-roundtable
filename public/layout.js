@@ -138,13 +138,6 @@ OTLayout = (layoutContainer, options) => {
     // Fill children into position
     const positionedChildren = [];
     const combinedSpeakerPositions = [...selfSpeakerIds, ...positions];
-
-    console.log(positions.length);
-    console.log(selfSpeakerIds.length);
-    console.log(combinedSpeakerPositions.length);
-    console.log(numberOfActiveSpeakers);
-    console.log('=============================');
-
     const numberOfStreams = Math.min(numberOfActiveSpeakers, combinedSpeakerPositions.length);
     const layoutDimension = getDynamicLayoutDimensions(numberOfStreams);
 

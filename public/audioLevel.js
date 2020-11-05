@@ -314,6 +314,12 @@ OTSpeech = (options) => {
 
       if (channel.type === 'subscriber') {
         const subscriber = channel.subscriber;
+
+        if (subscriber.stream == null) {
+          delete channels[channelId];
+          continue;
+        }
+
         const subscriberStreamId = subscriber.stream.id;
         if (subscriberStreamId === streamId) {
           return subscriber;

@@ -206,11 +206,13 @@
           const data = await response.json();
           return Promise.resolve(data);
         } catch (error) {
+          console.log(error.message);
+          error.code = 1006;
           return Promise.reject(error);
         }
       }
 
-      async function initializeSession() {
+      async function initializeSession(retry = false) {
         try {
           // Disable button
           document.getElementById("connect").disabled = true;
@@ -291,6 +293,16 @@
             }
           });
 
+          OTSession.on('sessionDisconnected', (event) => {
+            console.log('sessionDisconnected');
+            const { reason } = event;
+            if (reason === 'networkDisconnected') {
+              console.log('Network disconnected, attempting reconnection');
+              OTSession.disconnect();
+              connect(true, token);
+            }
+          });
+
           OTSession.on('signal', (e) => {
             const { type, data } = e;
             if (type === 'signal:chat') {
@@ -342,8 +354,25 @@
             }
           });
 
-          OTSession.connect(token, (error) => {
+          connect(retry);
+
+          return Promise.resolve();
+        } catch (error) {
+          alert(error.message);
+          return Promise.resolve();
+        }
+      }
+
+      async function connect(retry = false) {
+        try {
+          const credentials = await getCredentials();
+          OTSession.connect(credentials.token, (error) => {
             if (error) {
+              if (retry && error.code == 1006) {
+                console.log('Will attempt reconnect');
+                setTimeout(() => connect(retry), 5000);
+                return;
+              };
               handleError(error);
               alert(error.message);
               return;
@@ -373,11 +402,14 @@
             // Automatically start publishing camera
             startCamera();
           });
-
-          return Promise.resolve();
         } catch (error) {
-          alert(error.message);
-          return Promise.resolve();
+          if (error.code == 1006) {
+            console.error(error.message);
+            console.log('Will attempt reconnect');
+            setTimeout(() => connect(retry), 5000);
+            return;
+          }
+          console.error(error);
         }
       }
 
