@@ -126,6 +126,8 @@
       let enableAudio = true; // Assume not > 16 speakers
       let enableVideo = true; // Assume not > 16 speakers
       let unpublishDelay = 30; // 30s of disable audio + video to consider unpublishing
+      let retryCount = 0;
+      let retryLimit = 0;
 
 
       // Debouncing logic for handling window resize layout adjustment
@@ -368,8 +370,9 @@
           const credentials = await getCredentials();
           OTSession.connect(credentials.token, (error) => {
             if (error) {
-              if (retry && error.code == 1006) {
+              if (retry && error.code == 1006 && (retryLimit === 0 || (retryLimit > 0 && retryCount > 0))) {
                 console.log('Will attempt reconnect');
+                retryCount -= 1; // Decrease Count
                 setTimeout(() => connect(retry), 5000);
                 return;
               };
@@ -377,6 +380,8 @@
               alert(error.message);
               return;
             }
+
+            retryCount = retryLimit; // Reset Count
             
             console.log('Session Ready');
             document.getElementById('session-control').hidden = true;
@@ -403,9 +408,10 @@
             startCamera();
           });
         } catch (error) {
-          if (error.code == 1006) {
+          if (retry && error.code == 1006 && (retryLimit === 0 || (retryLimit > 0 && retryCount > 0))) {
             console.error(error.message);
             console.log('Will attempt reconnect');
+            retryCount -= 1; // Decrease Count
             setTimeout(() => connect(retry), 5000);
             return;
           }
@@ -699,7 +705,8 @@
         const params = getParams();
         let {
           name, token, highlight,
-          max, ratio, unpublish_delay,
+          max, ratio, 
+          unpublish_delay, retry_limit,
         } = params;
 
         const numberOfActiveSpeakers = parseInt((max || '2'), 10);
@@ -707,6 +714,8 @@
         highlight = (highlight || 'true').toLowerCase() === 'true';
         tokenParam = token;
         unpublishDelay = parseInt((unpublish_delay || '30'), 10);
+        retryLimit = parseInt((retry_limit || '0'), 10);
+        retryCount = retryLimit;
 
         ({ adjustLayout, updateHighlight, addSelfSpeakerId, removeSelfSpeakerId } = OTLayout(layoutContainer, { aspectRatio, highlight }));
         otSpeech = OTSpeech({ numberOfActiveSpeakers });
