@@ -456,6 +456,13 @@
               addSelfSpeakerId(speakerId);
               otSpeech.notifySpeakerChange();
           });
+
+          cameraPublisher.on('streamDestroyed', (event) => {
+              // Add to screen
+              const speakerId = insertDefaultUI ? cameraPublisher.id : event.stream.id;
+              removeSelfSpeakerId(speakerId);
+              otSpeech.notifySpeakerChange();
+          });
         } catch (error) {
           handleError(error);
         }
