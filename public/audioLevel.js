@@ -190,11 +190,13 @@ OTSpeech = (options) => {
     };
     let framerate = 30;
 
+    const currentNumberOfActiveSpeakers = Math.min(config.numberOfActiveSpeakers, currentSpeakerOrder.length);
+
     // Resolution
-    if (config.numberOfActiveSpeakers > 4) {
+    if (currentNumberOfActiveSpeakers > 4) {
       resolution.width = 320;
       resolution.height = 240;
-    } else if (config.numberOfActiveSpeakers > 1) {
+    } else if (currentNumberOfActiveSpeakers > 1) {
       resolution.width = 640;
       resolution.height = 480;
     } else {
@@ -203,9 +205,9 @@ OTSpeech = (options) => {
     }
 
     // Frame Rate
-    if (config.numberOfActiveSpeakers > 9) {
+    if (currentNumberOfActiveSpeakers > 9) {
       framerate = 7;
-    } else if (config.numberOfActiveSpeakers > 4) {
+    } else if (currentNumberOfActiveSpeakers > 4) {
       framerate = 15;
     } else {
       framerate = 30;
