@@ -583,34 +583,39 @@
           .map((speaker) => {
             // Speaker Div
             const speakerElement = document.createElement('div');
-            speakerElement.classList.add('Vlt-checkbox');
+            speakerElement.style.width = '100%';
+            speakerElement.style.display = 'flex';
+            speakerElement.style.flexDirection = 'row';
+            speakerElement.style.alignItems = 'center';
 
-            // Container Label
-            const label1 = document.createElement('label');
-            const span1 = document.createElement('span');
-            span1.classList.add('Vlt-checkbox__button');
+            // Icon Button
+            const iconButton = document.createElement('button');
+            iconButton.classList.add('Vlt-btn');
+            iconButton.classList.add('Vlt-btn--app');
+            iconButton.classList.add('Vlt-btn--icon');
+            iconButton.classList.add(speaker.pinned ? 'Vlt-btn--primary' : 'Vlt-btn--tertiary');
+            iconButton.style.marginRight = '16px';
+            iconButton.style.width = '24px';
+            iconButton.style.height = '24px';
+            iconButton.style.minWidth = '24px';
+            iconButton.style.minHeight = '24px';
+            iconButton.style.padding = '2px';
+            iconButton.onclick = () => otSpeech.setSpeakerPin(speaker.id, !speaker.pinned);
 
-            // Checkbox
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.checked = speaker.pinned;
-            checkbox.onchange = () => otSpeech.setSpeakerPin(speaker.id, checkbox.checked); // Update Speaker Pin when check/uncheck
+            // Icon SVG
+            const iconElement = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+            iconElement.style.color = '#ff0000';
+            iconElement.innerHTML = '<use xlink:href="volta-icons.svg#Vlt-icon-pin-2" />';
+            iconElement.style.width = '12px';
+            iconElement.style.height = '12px';
+            iconButton.appendChild(iconElement);
 
-            // Icon
-            const span2 = document.createElement('span');
-            span2.classList.add('Vlt-checkbox__icon');
+            // Speaker Name
+            const nameElement = document.createElement('label');
+            nameElement.innerText = ((speaker.subscriber.stream) || {}).name || speaker.id;
 
-            // Value
-            const label2 = document.createElement('label');
-            label2.innerText = ((speaker.subscriber.stream) || {}).name || speaker.id;
-
-            // Set Hierarchy
-            span1.appendChild(checkbox);
-            span1.appendChild(span2);
-            label1.appendChild(span1);
-            label1.appendChild(label2);
-            speakerElement.appendChild(label1);
-
+            speakerElement.appendChild(iconButton);
+            speakerElement.appendChild(nameElement);
             return speakerElement;
           });
 
