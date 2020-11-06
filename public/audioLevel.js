@@ -17,6 +17,7 @@ OTSpeech = (options) => {
   const channels = {};
   const rawAudioLevels = {};
 
+  let selfCount = 0;
   let currentSpeakerOrder = [];
   let positions = [];
   let mostActiveSpeakerId = null;
@@ -133,8 +134,9 @@ OTSpeech = (options) => {
     const newSpeakerOrder = getOrderedChannels(); // Get sorted speakers based on speech and moving average audio level
     const newPositions = getPositions(newSpeakerOrder); // Get updated speaker positions in the grid
 
-    const newSize = Math.min(config.numberOfActiveSpeakers, newSpeakerOrder.length); // Get max length for slice (against max number of active speaker)
-    const oldSize = Math.min(config.numberOfActiveSpeakers, currentSpeakerOrder.length); // Get max length for slice (against max number of active speaker)
+    const numberOfNonSelfSpeakers = config.numberOfActiveSpeakers - selfCount;
+    const newSize = Math.min(numberOfNonSelfSpeakers, newSpeakerOrder.length); // Get max length for slice (against max number of active speaker)
+    const oldSize = Math.min(numberOfNonSelfSpeakers, currentSpeakerOrder.length); // Get max length for slice (against max number of active speaker)
 
     const newIds = newSpeakerOrder.map(speaker => speaker.id).slice(0, newSize).sort(); // Slice and sort to size
     const oldIds = currentSpeakerOrder.map(speaker => speaker.id).slice(0, oldSize).sort(); // Slice and sort to size
@@ -298,6 +300,17 @@ OTSpeech = (options) => {
     checkActiveSpeakerChange(false);
   };
 
+  const addSelf = () => {
+    selfCount += 1;
+  };
+
+  const removeSelf = () => {
+    selfCount -= 1;
+    if (selfCount < 0) {
+      selfCount = 0;
+    }
+  };
+
   const addSubscriber = (subscriber) => {
     console.log(`Adding Subscriber ${subscriber.stream.id}`);
     channels[subscriber.stream.id] = {
@@ -426,6 +439,8 @@ OTSpeech = (options) => {
     setVoiceLevelThreshold,
 
     // Subscribers
+    addSelf,
+    removeSelf,
     addSubscriber,
     removeSubscriber,
     removeSubscriberByStreamId,

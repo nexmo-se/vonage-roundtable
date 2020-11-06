@@ -492,6 +492,7 @@
               // Add to screen
               const speakerId = insertDefaultUI ? cameraPublisher.id : event.stream.id;
               addSelfSpeakerId(speakerId);
+              otSpeech.addSelf();
               otSpeech.notifySpeakerChange();
           });
 
@@ -499,6 +500,7 @@
               // Add to screen
               const speakerId = insertDefaultUI ? cameraPublisher.id : event.stream.id;
               removeSelfSpeakerId(speakerId);
+              otSpeech.removeSelf();
               otSpeech.notifySpeakerChange();
           });
         } catch (error) {
