@@ -92,7 +92,7 @@ OTSpeech = (options) => {
     }));
 
   const getPositions = (newSpeakerOrder) => {
-    const size = Math.min(config.numberOfActiveSpeakers, newSpeakerOrder.length);
+    const size = Math.min(config.numberOfActiveSpeakers - selfCount, newSpeakerOrder.length);
     const newIds = newSpeakerOrder.map(speaker => speaker.id).slice(0, size);
 
     const availableSpeakers = Object.assign([], newIds);  // Clone array from new Ids
@@ -217,7 +217,7 @@ OTSpeech = (options) => {
 
     for (let i = 0; i < currentSpeakerOrder.length; i += 1) {
       const speaker = currentSpeakerOrder[i];
-      const shouldSubscribeToVideo = i < config.numberOfActiveSpeakers;
+      const shouldSubscribeToVideo = i < config.numberOfActiveSpeakers - selfCount;
       subscribeToVideo(speaker.id, shouldSubscribeToVideo);
       subscribeToQuality(speaker.id, resolution, framerate);
     }
