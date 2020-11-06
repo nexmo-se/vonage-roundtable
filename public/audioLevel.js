@@ -184,10 +184,38 @@ OTSpeech = (options) => {
   const getMostActiveSpeakerId = () => mostActiveSpeakerId;
 
   const updateSubscriptionToVideos = () => {
+    const resolution = {
+      width: 1280,
+      height: 720,
+    };
+    let framerate = 30;
+
+    // Resolution
+    if (config.numberOfActiveSpeakers > 4) {
+      resolution.width = 320;
+      resolution.height = 240;
+    } else if (config.numberOfActiveSpeakers > 1) {
+      resolution.width = 640;
+      resolution.height = 480;
+    } else {
+      resolution.width = 1280;
+      resolution.height = 720;
+    }
+
+    // Frame Rate
+    if (config.numberOfActiveSpeakers > 9) {
+      framerate = 7;
+    } else if (config.numberOfActiveSpeakers > 4) {
+      framerate = 15;
+    } else {
+      framerate = 30;
+    }
+
     for (let i = 0; i < currentSpeakerOrder.length; i += 1) {
       const speaker = currentSpeakerOrder[i];
       const shouldSubscribeToVideo = i < config.numberOfActiveSpeakers;
       subscribeToVideo(speaker.id, shouldSubscribeToVideo);
+      subscribeToQuality(speaker.id, resolution, framerate);
     }
   }
 
@@ -376,7 +404,11 @@ OTSpeech = (options) => {
       const handle = setTimeout(() => channels[channelId].subscriber.subscribeToVideo(false), config.unsubscribeDelay);
       channels[channelId].unsubscribeHandle = handle;
     }
+  };
 
+  const subscribeToQuality = (channelId, resolution, framerate) => {
+    channels[channelId].subscriber.setPreferredResolution(resolution);
+    channels[channelId].subscriber.setPreferredFrameRate(framerate);
   };
 
   const notifySpeakerChange = () => checkActiveSpeakerChange(true);
@@ -400,6 +432,7 @@ OTSpeech = (options) => {
     // Action
     updateSubscriptionToVideos,
     subscribeToVideo,
+    subscribeToQuality,
     addAudioLevel,
     setSpeakerPin,
     notifySpeakerChange,
