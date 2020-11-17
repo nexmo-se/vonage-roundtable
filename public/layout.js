@@ -104,8 +104,6 @@ OTLayout = (layoutContainer, screenContainer, options) => {
       }
     }
 
-    console.log(`${isScreen ? 'screen' : 'camera'} : ${bestDimension.width}x${bestDimension.height} [${bestDimension.efficiency}]`);
-
     return {
       width: bestDimension.width,
       height: bestDimension.height,
