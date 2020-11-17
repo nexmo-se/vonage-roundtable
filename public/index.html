@@ -110,6 +110,7 @@
       const publisherResolution = { width: 640, height: 480 };
       const subscriberResolution = { width: 640, height: 480 };
       const insertDefaultUI = true; // Whether to use default UI from Opentok or add manually
+
       const layoutContainer = document.getElementById("layoutContainer");
       const screenContainer = document.getElementById("screenContainer");
 
@@ -131,6 +132,7 @@
       let retryLimit = 0;
 
       let streamControlHideTimeout = null;
+      let hideControlDelay = 1000; // in milliseconds
 
 
       // Debouncing logic for handling window resize layout adjustment
@@ -742,7 +744,7 @@
 
           streamControlHideTimeout = setTimeout(() => {
             streamControlContainer.hidden = true;
-          }, 1000)
+          }, hideControlDelay)
         };
       }
 
@@ -754,6 +756,7 @@
           name, token, highlight,
           max, ratio, 
           unpublish_delay, retry_limit,
+          hide_control_delay,
         } = params;
 
         const numberOfActiveSpeakers = parseInt((max || '2'), 10);
@@ -763,6 +766,7 @@
         unpublishDelay = parseInt((unpublish_delay || '30'), 10);
         retryLimit = parseInt((retry_limit || '0'), 10);
         retryCount = retryLimit;
+        hideControlDelay = parseInt((hide_control_delay || '1000'), 10);
 
         ({ adjustLayout, updateHighlight, addSelfSpeakerId, removeSelfSpeakerId } = OTLayout(layoutContainer, screenContainer, { aspectRatio, highlight }));
         otSpeech = OTSpeech({ numberOfActiveSpeakers });
