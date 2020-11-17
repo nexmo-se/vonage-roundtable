@@ -18,7 +18,7 @@
     <link rel="stylesheet" href="volta.min.css">
   </head>
   <body style="display: flex; flex-direction: row; width: 100%; height: 100vh;">
-    <div style="position: relative; display: flex; flex: 1; height: 100vh; flex-direction: row; background-color: black;">
+    <div id="videoContainer" style="position: relative; display: flex; flex: 1; height: 100vh; flex-direction: row; background-color: black;">
       <div id="screenContainer" style="position: relative; display: flex; flex: 1; height: 100vh; background-color: black;"></div>
       <div id="layoutContainer" style="position: relative; display: flex; width: 100%; height: 100vh; background-color: black; flex-direction: row;"></div>
 
@@ -129,6 +129,8 @@
       let unpublishDelay = 30; // 30s of disable audio + video to consider unpublishing
       let retryCount = 0;
       let retryLimit = 0;
+
+      let streamControlHideTimeout = null;
 
 
       // Debouncing logic for handling window resize layout adjustment
@@ -392,7 +394,6 @@
             
             console.log('Session Ready');
             document.getElementById('session-control').hidden = true;
-            document.getElementById('stream-control').hidden = false;
             document.getElementById('speaker-control').hidden = false;
             
             if (enableAudio) {
@@ -410,6 +411,9 @@
               document.getElementById('button-video-enable').classList.remove('Vlt-btn--primary');
               document.getElementById('button-video-enable').classList.add('Vlt-btn--tertiary');
             }
+
+            // Set Stream Control Listener
+            setStreamControlHoverListener();
 
             // Automatically start publishing camera
             startCamera();
@@ -717,6 +721,29 @@
           document.getElementById('chat-text').value = '';
           console.log('Chat sent');
         });
+      }
+
+      function setStreamControlHoverListener() {
+        const videoContainer = document.getElementById('videoContainer');
+        const streamControlContainer = document.getElementById('stream-control');
+
+        videoContainer.onmouseenter = (e) => {
+          if (streamControlHideTimeout != null) {
+            clearTimeout(streamControlHideTimeout);
+          }
+
+          streamControlContainer.hidden = false;
+        };
+
+        videoContainer.onmouseleave = (e) => {
+          if (streamControlHideTimeout != null) {
+            clearTimeout(streamControlHideTimeout);
+          }
+
+          streamControlHideTimeout = setTimeout(() => {
+            streamControlContainer.hidden = true;
+          }, 1000)
+        };
       }
 
       waitForReady(() => {
