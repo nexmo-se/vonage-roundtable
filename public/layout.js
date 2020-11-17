@@ -51,9 +51,9 @@ OTLayout = (layoutContainer, screenContainer, options) => {
 
   const getFixedLayoutDimension = (numberOfStreams) => fixedLayoutDimensions[numberOfStreams];
 
-  const getDynamicLayoutDimensions = (numberOfStreams) => {
+  const getDynamicLayoutDimensions = (numberOfStreams, isScreen = false) => {
     const hasScreens = screenContainerElement.childNodes.length > 0;
-    if (hasScreens) {
+    if (hasScreens && !isScreen) {
       const width = 200;
       const height = width / config.aspectRatio;
       return {
@@ -62,7 +62,8 @@ OTLayout = (layoutContainer, screenContainer, options) => {
       };
     }
 
-    const { width: containerWidth, height: containerHeight } = layoutContainerElement.getBoundingClientRect();
+    const containerElement = isScreen ? screenContainerElement : layoutContainerElement;
+    const { width: containerWidth, height: containerHeight } = containerElement.getBoundingClientRect();
     const containerArea = containerWidth * containerHeight;
 
     const bestDimension = {
@@ -103,6 +104,8 @@ OTLayout = (layoutContainer, screenContainer, options) => {
       }
     }
 
+    console.log(`${isScreen ? 'screen' : 'camera'} : ${bestDimension.width}x${bestDimension.height} [${bestDimension.efficiency}]`);
+
     return {
       width: bestDimension.width,
       height: bestDimension.height,
@@ -141,10 +144,21 @@ OTLayout = (layoutContainer, screenContainer, options) => {
 
   const adjustLayout = (positions, numberOfActiveSpeakers = 2) => {
     // Set width of containers
-    const hasScreens = screenContainerElement.childNodes.length > 0;
+    const numberOfScreens = screenContainerElement.childNodes.length;
+    const hasScreens = numberOfScreens > 0;
     screenContainerElement.style.display = hasScreens ? 'flex' : 'none';
     layoutContainerElement.style.width = hasScreens ? '200px' : '100%';
     layoutContainerElement.style['flex-direction'] = hasScreens ? 'column' : 'row';
+
+    // Update Screen Dimensions
+    const screenDimension = getDynamicLayoutDimensions(numberOfScreens, true);
+    const screenNodes = screenContainerElement.childNodes;
+    for (let i = 0; i < screenNodes.length; i += 1) {
+      screenNodes[i].style.display = 'flex';
+      screenNodes[i].style.width = `${screenDimension.width}px`;
+      screenNodes[i].style.height = `${screenDimension.height}px`;
+      
+    }
 
 
     // Hide All
@@ -163,7 +177,7 @@ OTLayout = (layoutContainer, screenContainer, options) => {
     const positionedChildren = [];
     const combinedSpeakerPositions = [...selfSpeakerIds, ...positions];
     const numberOfStreams = Math.min(numberOfActiveSpeakers, combinedSpeakerPositions.length);
-    const layoutDimension = getDynamicLayoutDimensions(numberOfStreams);
+    const layoutDimension = getDynamicLayoutDimensions(numberOfStreams, false);
 
     for (let i = 0; i < numberOfStreams; i += 1) {
       const speakerId = combinedSpeakerPositions[i];
