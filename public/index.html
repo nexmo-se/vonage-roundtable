@@ -537,12 +537,14 @@
             return;
           }
 
-          screenPublisher = OT.initPublisher('publisherContainerScreen', {
+          screenPublisher = OT.initPublisher('screenContainer', {
             videoSource: 'screen',
             fitMode: 'contain',
             insertMode: 'append',
             name: `${name}-screen`,
             resolution: '1280x720',
+            width: '100%',
+            height: '100vh',
             style: { nameDisplayMode: "off" }
           }, (error) => {
             if (error) {
@@ -559,6 +561,8 @@
 
               document.getElementById('button-screen-share').classList.remove('Vlt-btn--tertiary');
               document.getElementById('button-screen-share').classList.add('Vlt-btn--primary');
+              
+              otSpeech.notifySpeakerChange();
             })
           });
         } catch (error) {
@@ -574,6 +578,8 @@
 
         document.getElementById('button-screen-share').classList.remove('Vlt-btn--primary');
         document.getElementById('button-screen-share').classList.add('Vlt-btn--tertiary');
+
+        otSpeech.notifySpeakerChange();
       }
 
       function updateSpeakerPins() {
