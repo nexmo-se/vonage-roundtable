@@ -1,4 +1,4 @@
-OTLayout = (layoutContainer, options) => {
+OTLayout = (layoutContainer, screenContainer, options) => {
   const config = Object.assign({
     aspectRatio: 16 / 9, // Aspect Ratio
     highlight: true,
@@ -39,12 +39,29 @@ OTLayout = (layoutContainer, options) => {
   layoutContainerElement.style['justify-content'] = 'center';
   layoutContainerElement.style['align-items'] = 'center';
 
+  const screenContainerElement = screenContainer;
+  screenContainerElement.style.display = 'flex';
+  screenContainerElement.style['flex-direction'] = 'row';
+  screenContainerElement.style['flex-wrap'] = 'wrap';
+  screenContainerElement.style['justify-content'] = 'center';
+  screenContainerElement.style['align-items'] = 'center';
+
   let mostActiveSpeakerId = null;
 
 
   const getFixedLayoutDimension = (numberOfStreams) => fixedLayoutDimensions[numberOfStreams];
 
   const getDynamicLayoutDimensions = (numberOfStreams) => {
+    const hasScreens = screenContainerElement.childNodes.length > 0;
+    if (hasScreens) {
+      const width = 200;
+      const height = width / config.aspectRatio;
+      return {
+        width,
+        height,
+      };
+    }
+
     const { width: containerWidth, height: containerHeight } = layoutContainerElement.getBoundingClientRect();
     const containerArea = containerWidth * containerHeight;
 
@@ -123,6 +140,13 @@ OTLayout = (layoutContainer, options) => {
   }
 
   const adjustLayout = (positions, numberOfActiveSpeakers = 2) => {
+    // Set width of containers
+    const hasScreens = screenContainerElement.childNodes.length > 0;
+    screenContainerElement.style.display = hasScreens ? 'flex' : 'none';
+    layoutContainerElement.style.width = hasScreens ? '200px' : '100%';
+    layoutContainerElement.style['flex-direction'] = hasScreens ? 'column' : 'row';
+
+
     // Hide All
     const children = [];
     const childNodes = layoutContainerElement.childNodes;

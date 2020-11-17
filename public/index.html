@@ -18,9 +18,9 @@
     <link rel="stylesheet" href="volta.min.css">
   </head>
   <body style="display: flex; flex-direction: row; width: 100%; height: 100vh;">
-    <div style="position: relative; display: flex; flex: 1; height: 100vh; flex-direction: column; background-color: black; overflow-y: scroll;">
-      <div id="screenContainer" style="position: relative; display: flex; width: 100%; height: auto; background-color: black;"></div>
-      <div id="layoutContainer" style="position: relative; display: flex; width: 100%; height: 100vh; min-height: 480px; background-color: black;"></div>
+    <div style="position: relative; display: flex; flex: 1; height: 100vh; flex-direction: row; background-color: black;">
+      <div id="screenContainer" style="position: relative; display: flex; flex: 1; height: 100vh; background-color: black;"></div>
+      <div id="layoutContainer" style="position: relative; display: flex; width: 100%; height: 100vh; background-color: black; flex-direction: row;"></div>
 
       <div id="stream-control" style="width: 100%; position: absolute; z-index: 9999; bottom: 50px; left: 0; right: 0;" hidden>
         <div style="display: flex; flex-direction: row; justify-content: center; align-items: center;">
@@ -111,8 +111,9 @@
       const subscriberResolution = { width: 640, height: 480 };
       const insertDefaultUI = true; // Whether to use default UI from Opentok or add manually
       const layoutContainer = document.getElementById("layoutContainer");
+      const screenContainer = document.getElementById("screenContainer");
 
-      let { adjustLayout, updateHighlight, addSelfSpeakerId, removeSelfSpeakerId } = OTLayout(layoutContainer);
+      let { adjustLayout, updateHighlight, addSelfSpeakerId, removeSelfSpeakerId } = OTLayout(layoutContainer, screenContainer);
       let otSpeech = OTSpeech({ numberOfActiveSpeakers: initialNumberOfActiveSpeakers });
       otSpeech.setOnActiveSpeakerChangeListener(onSpeakerOrderChanged);
       otSpeech.setOnMostActiveSpeakerChangeListener(onMostActiveSpeakerChanged);
@@ -272,7 +273,11 @@
 
                 const layoutContainer = event.stream.videoType === 'screen' ? 'screenContainer' : 'layoutContainer';
                 document.getElementById(layoutContainer).appendChild(divElement);
+
+                otSpeech.notifySpeakerChange();
               });
+            } else {
+              otSpeech.notifySpeakerChange();
             }
           });
 
@@ -293,6 +298,8 @@
                 containerElement.removeChild(childNode);
               }
             }
+
+            otSpeech.notifySpeakerChange();
           });
 
           OTSession.on('sessionDisconnected', (event) => {
@@ -724,7 +731,7 @@
         retryLimit = parseInt((retry_limit || '0'), 10);
         retryCount = retryLimit;
 
-        ({ adjustLayout, updateHighlight, addSelfSpeakerId, removeSelfSpeakerId } = OTLayout(layoutContainer, { aspectRatio, highlight }));
+        ({ adjustLayout, updateHighlight, addSelfSpeakerId, removeSelfSpeakerId } = OTLayout(layoutContainer, screenContainer, { aspectRatio, highlight }));
         otSpeech = OTSpeech({ numberOfActiveSpeakers });
         otSpeech.setOnActiveSpeakerChangeListener(onSpeakerOrderChanged);
         otSpeech.setOnMostActiveSpeakerChangeListener(onMostActiveSpeakerChanged);
