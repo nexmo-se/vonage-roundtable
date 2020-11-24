@@ -68,7 +68,7 @@
           <button id="connect" class="Vlt-btn Vlt-btn--primary" onclick="initializeSession()">Connect to Session</button>
         </div>
 
-        <div id="speaker-control" style="margin-bottom: 16px; width: 100%; display: flex; flex-direction: column; flex: 1;" hidden>
+        <div id="speaker-control" style="margin-bottom: 16px; width: 100%; display: none; flex-direction: column; flex: 1;" hidden>
           <div class="Vlt-tabs" style="flex: 1; display: flex; flex-direction: column; width: 100%;" >
             <div class="Vlt-tabs__header Vlt-tabs__header--bordered">
               <div class="Vlt-tabs__link Vlt-tabs__link_active"><svg><use xlink:href="volta-icons.svg#Vlt-icon-chat-2"></use></svg><span>Chat</span></div>
@@ -397,6 +397,7 @@
             console.log('Session Ready');
             document.getElementById('session-control').hidden = true;
             document.getElementById('speaker-control').hidden = false;
+            document.getElementById('speaker-control').style.display = 'flex';
             
             if (enableAudio) {
               document.getElementById('button-audio-enable').classList.remove('Vlt-btn--tertiary');
