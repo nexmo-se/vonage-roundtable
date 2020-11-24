@@ -587,6 +587,7 @@
           }, (error) => {
             if (error) {
               handleError(error);
+              stopScreen();
               return;
             }
             
@@ -602,6 +603,14 @@
               
               otSpeech.notifySpeakerChange();
             })
+          });
+
+          screenPublisher.on('streamCreated', (event) => {
+            otSpeech.notifySpeakerChange();
+          });
+
+          screenPublisher.on('streamDestroyed', (event) => {
+            stopScreen();
           });
         } catch (error) {
           handleError(error);
