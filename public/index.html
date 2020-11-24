@@ -101,7 +101,33 @@
               </div>
 
               <div class="Vlt-tabs__panel" style="height: 100%;">
-                Settings
+                <div class="Vlt-form__element">
+                  <label class="Vlt-label" for="number-of-active-speakers-select">Number of on-screen speakers</label>
+                  <div class="Vlt-select">
+                    <select id="number-of-active-speakers-select" onchange="onActiveSpeakerSettingChanged(event)">
+                      <option selected disabled>Select</option>
+                      <option>2</option>
+                      <option>3</option>
+                      <option>4</option>
+                      <option>5</option>
+                      <option>6</option>
+                      <option>7</option>
+                      <option>8</option>
+                      <option>9</option>
+                      <option>10</option>
+                      <option>11</option>
+                      <option>12</option>
+                      <option>13</option>
+                      <option>14</option>
+                      <option>15</option>
+                      <option>16</option>
+                      <option>17</option>
+                      <option>18</option>
+                      <option>19</option>
+                      <option>20</option>
+                    </select>
+                  </div>
+                </div>
               </div>
           
             </div>
@@ -705,6 +731,10 @@
         }
       }
 
+      function onActiveSpeakerSettingChanged(event) {
+        otSpeech.setNumberOfActiveSpeakers(event.target.value);
+      }
+
       function sendChat() {
         const text = document.getElementById('chat-text').value;
         const name = document.getElementById('name').value;
@@ -788,7 +818,8 @@
           document.getElementById('session-control').hidden = false;
           document.getElementById('name-control').hidden = false;
         }
-        
+
+        document.getElementById('number-of-active-speakers-select').value = numberOfActiveSpeakers;
       })
     </script>
     
