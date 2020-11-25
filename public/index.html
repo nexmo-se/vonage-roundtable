@@ -378,6 +378,10 @@
               bubble.style.marginBottom = '8px';
               bubble.style.borderRadius = '16px';
               bubble.style.color = '#ffffff';
+              bubble.style.whiteSpace = 'pre-wrap';
+              bubble.style.wordWrap = 'break-word';
+              bubble.style.overflowWrap = 'break-word';
+              bubble.style.wordBreak = 'break-word';
               bubble.innerHTML = urlify(text);
 
               const isSelf = name === document.getElementById('name').value;
@@ -394,6 +398,10 @@
                 nameDiv.style.fontWeight = 'bold';
 
                 const textDiv = document.createElement('div');
+                textDiv.style.whiteSpace = 'pre-wrap';
+                textDiv.style.wordWrap = 'break-word';
+                textDiv.style.overflowWrap = 'break-word';
+                textDiv.style.wordBreak = 'break-word';
                 textDiv.innerHTML = urlify(text);
 
                 bubble.appendChild(nameDiv);
