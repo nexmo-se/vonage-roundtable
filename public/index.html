@@ -250,6 +250,15 @@
         }
       }
 
+      function urlify(text) {
+        var urlRegex = /(https?:\/\/[^\s]+)/g;
+        return text.replace(urlRegex, function(url) {
+          return '<a href="' + url + '" target="_blank">' + url + '</a>';
+        });
+        // or alternatively
+        // return text.replace(urlRegex, '<a href="$1">$1</a>')
+      }
+
       async function initializeSession() {
         try {
           // Disable button
@@ -369,7 +378,7 @@
               bubble.style.marginBottom = '8px';
               bubble.style.borderRadius = '16px';
               bubble.style.color = '#ffffff';
-              bubble.innerText = text;
+              bubble.innerHTML = urlify(text);
 
               const isSelf = name === document.getElementById('name').value;
               if (isSelf) {
@@ -385,7 +394,7 @@
                 nameDiv.style.fontWeight = 'bold';
 
                 const textDiv = document.createElement('div');
-                textDiv.innerText = text;
+                textDiv.innerHTML = urlify(text);
 
                 bubble.appendChild(nameDiv);
                 bubble.appendChild(textDiv);
