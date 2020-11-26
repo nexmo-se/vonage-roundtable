@@ -161,6 +161,7 @@
       let unpublishDelay = 30; // 30s of disable audio + video to consider unpublishing
       let retryCount = 0;
       let retryLimit = 0;
+      let roomName = null;
 
       let streamControlHideTimeout = null;
       let hideControlDelay = 1000; // in milliseconds
@@ -211,7 +212,18 @@
       }
 
       async function getCredentials() {
-        if (tokenParam != null && tokenParam !== '') {
+        if (roomName != null && roomName !== '') {
+          try {
+            const url = `/token?room=${roomName}`;
+            const response = await fetch(url);
+            const data = await response.json();
+            return Promise.resolve(data);
+          } catch (error) {
+            console.log(error.message);
+            error.code = 1006;
+            return Promise.reject(error);
+          }
+        } else if (tokenParam != null && tokenParam !== '') {
           // Decode Token
           const b64Encoded = tokenParam.slice(4);
           const buffer = atob(b64Encoded);
@@ -238,6 +250,8 @@
             token: tokenParam,
           });
         }
+
+        // Default
         try {
           const url = `/token`;
           const response = await fetch(url);
@@ -816,12 +830,13 @@
         const params = getParams();
         let {
           name, token, highlight,
+          room,
           max, ratio, 
           unpublish_delay, retry_limit,
           hide_control_delay,
         } = params;
 
-        const numberOfActiveSpeakers = parseInt((max || '2'), 10);
+        const numberOfActiveSpeakers = parseInt((max || '4'), 10);
         const aspectRatio = ratio === '16_9' ? 16 / 9 : 4 / 3;
         highlight = (highlight || 'true').toLowerCase() === 'true';
         tokenParam = token;
@@ -829,6 +844,7 @@
         retryLimit = parseInt((retry_limit || '0'), 10);
         retryCount = retryLimit;
         hideControlDelay = parseInt((hide_control_delay || '1000'), 10);
+        roomName = room;
 
         ({ adjustLayout, updateHighlight, addSelfSpeakerId, removeSelfSpeakerId } = OTLayout(layoutContainer, screenContainer, { aspectRatio, highlight }));
         otSpeech = OTSpeech({ numberOfActiveSpeakers });
