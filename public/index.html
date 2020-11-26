@@ -1,7 +1,7 @@
 
 <html>
   <head>
-    <title>Simple Audio Level</title>
+    <title>Vonage Roundtable</title>
 
     <script src="https://static.opentok.com/v2/js/opentok.min.js"></script>
     <script src="audioLevel.js"></script>
@@ -861,6 +861,7 @@
           document.getElementById('name-control').hidden = false;
         }
 
+        document.title = roomName || 'Vonage Roundtable'
         document.getElementById('number-of-active-speakers-select').value = numberOfActiveSpeakers;
       })
     </script>
