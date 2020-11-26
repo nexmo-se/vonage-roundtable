@@ -3,7 +3,9 @@
   "description": "A simple Opentok Audio Level application",
   "repository": "https://github.com/nexmo-se/simple-opentok-audio-level",
   "logo": "https://node-js-sample.herokuapp.com/node.png",
-  "addons": [],
+  "addons": [
+    "heroku-postgresql:hobby-dev"
+  ],
   "env": {
     "API_KEY": {
       "desription": "Opentok API Key",
