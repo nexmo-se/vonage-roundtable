@@ -69,6 +69,11 @@ const getRoomSessionId = async (room) => {
       return Promise.resolve(null);
     }
     
+    
+    console.log('Updating last ping');
+    roomSessionRaw.lastPing = currentTime;
+    await roomSessionRaw.save();
+
     return Promise.resolve(roomSession.sessionId);
   } catch (error) {
     return Promise.reject(error);
@@ -117,16 +122,6 @@ app.get('/token', async (req, res, next) => {
       sessionId: sanitizedSessionId,
       token,
     });
-  } catch (error) {
-    next(error);
-  }
-});
-
-app.get('/ping', async (req, res, next) => {
-  try {
-    const { room } = req.query;
-    console.log(`Pinging room: ${room}`);
-    res.send('ok');
   } catch (error) {
     next(error);
   }
