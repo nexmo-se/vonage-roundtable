@@ -18,6 +18,11 @@
     "SESSION_ID": {
       "description": "Session Id to be used in application",
       "required": true
+    },
+    "SESSION_EXPIRY_DELAY": {
+      "description": "Delay after the last session ID and token request for room before the session ID expires (in seconds)",
+      "required": true,
+      "value": "9000"
     }
   }
 }
