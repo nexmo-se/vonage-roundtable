@@ -264,10 +264,10 @@
         }
       }
 
-      function urlify(text) {
+      function urlify(text, color) {
         var urlRegex = /(https?:\/\/[^\s]+)/g;
         return text.replace(urlRegex, function(url) {
-          return '<a href="' + url + '" target="_blank" style="color: white;">' + url + '</a>';
+          return '<a href="' + url + '" target="_blank" style="color: ' + color + '">' + url + '</a>';
         });
         // or alternatively
         // return text.replace(urlRegex, '<a href="$1">$1</a>')
@@ -396,7 +396,7 @@
               bubble.style.wordWrap = 'break-word';
               bubble.style.overflowWrap = 'break-word';
               bubble.style.wordBreak = 'break-word';
-              bubble.innerHTML = urlify(text);
+              bubble.innerHTML = urlify(text, '#ffffff');
 
               const isSelf = name === document.getElementById('name').value;
               if (isSelf) {
@@ -416,7 +416,7 @@
                 textDiv.style.wordWrap = 'break-word';
                 textDiv.style.overflowWrap = 'break-word';
                 textDiv.style.wordBreak = 'break-word';
-                textDiv.innerHTML = urlify(text);
+                textDiv.innerHTML = urlify(text, '#871fff');
 
                 bubble.appendChild(nameDiv);
                 bubble.appendChild(textDiv);
