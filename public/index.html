@@ -24,6 +24,9 @@
 
       <div id="stream-control" style="width: 100%; position: absolute; z-index: 9999; bottom: 50px; left: 0; right: 0;" hidden>
         <div style="display: flex; flex-direction: row; justify-content: center; align-items: center;">
+          <button id="button-record" class="Vlt-btn Vlt-btn--large Vlt-btn--tertiary Vlt-btn--icon" onclick="toggleRecord()">
+            <svg><use xlink:href="volta-icons.svg#Vlt-icon-rec-full" /></svg>
+          </button>
           <button id="button-video-enable" class="Vlt-btn Vlt-btn--large Vlt-btn--primary Vlt-btn--icon" onclick="toggleVideoEnable()">
             <svg><use xlink:href="volta-icons.svg#Vlt-icon-video-negative" /></svg>
           </button>
@@ -101,31 +104,43 @@
               </div>
 
               <div class="Vlt-tabs__panel" style="height: 100%;">
-                <div class="Vlt-form__element">
-                  <label class="Vlt-label" for="number-of-active-speakers-select">Number of on-screen speakers</label>
-                  <div class="Vlt-select">
-                    <select id="number-of-active-speakers-select" onchange="onActiveSpeakerSettingChanged(event)">
-                      <option selected disabled>Select</option>
-                      <option>2</option>
-                      <option>3</option>
-                      <option>4</option>
-                      <option>5</option>
-                      <option>6</option>
-                      <option>7</option>
-                      <option>8</option>
-                      <option>9</option>
-                      <option>10</option>
-                      <option>11</option>
-                      <option>12</option>
-                      <option>13</option>
-                      <option>14</option>
-                      <option>15</option>
-                      <option>16</option>
-                      <option>17</option>
-                      <option>18</option>
-                      <option>19</option>
-                      <option>20</option>
-                    </select>
+                <div style="height: 100%; display: flex; flex-direction: column;">
+                  <div class="Vlt-form__element">
+                    <label class="Vlt-label" for="number-of-active-speakers-select">Number of on-screen speakers</label>
+                    <div class="Vlt-select">
+                      <select id="number-of-active-speakers-select" onchange="onActiveSpeakerSettingChanged(event)">
+                        <option selected disabled>Select</option>
+                        <option>2</option>
+                        <option>3</option>
+                        <option>4</option>
+                        <option>5</option>
+                        <option>6</option>
+                        <option>7</option>
+                        <option>8</option>
+                        <option>9</option>
+                        <option>10</option>
+                        <option>11</option>
+                        <option>12</option>
+                        <option>13</option>
+                        <option>14</option>
+                        <option>15</option>
+                        <option>16</option>
+                        <option>17</option>
+                        <option>18</option>
+                        <option>19</option>
+                        <option>20</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div id="recording" class="Vlt-form__element" style="display: none; flex: 1; flex-direction: column;" hidden>
+                    <label class="Vlt-label">Recording (admin only)</label>
+                    <button class="Vlt-btn Vlt-btn--secondary Vlt-btn--app" onclick="refreshArchives()">Refresh</button>
+
+                    <div style="width: 100%; height: 0px; display: flex; flex: 1; flex-direction: column;">
+                      <div id="archives-container" style="width: 100%; height: 100%; display: flex; flex-direction: column; overflow-y: scroll;">
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -156,12 +171,15 @@
       let cameraPublisher = null;
       let screenPublisher = null;
 
+      let recording = false;
       let enableAudio = true; // Assume not > 16 speakers
       let enableVideo = true; // Assume not > 16 speakers
       let unpublishDelay = 30; // 30s of disable audio + video to consider unpublishing
       let retryCount = 0;
       let retryLimit = 0;
       let roomName = null;
+      let roomSessionId = null;
+      let userRole = 'user';
 
       let streamControlHideTimeout = null;
       let hideControlDelay = 1000; // in milliseconds
@@ -217,6 +235,7 @@
             const url = `/token?room=${roomName}`;
             const response = await fetch(url);
             const data = await response.json();
+            roomSessionId = data.sessionId;
             return Promise.resolve(data);
           } catch (error) {
             console.log(error.message);
@@ -244,6 +263,7 @@
             data[key] = value;
           }
 
+          roomSessionId = data.session_id;
           return Promise.resolve({
             apiKey: data.partner_id,
             sessionId: data.session_id,
@@ -256,11 +276,89 @@
           const url = `/token`;
           const response = await fetch(url);
           const data = await response.json();
+          roomSessionId = data.sessionId;
           return Promise.resolve(data);
         } catch (error) {
           console.log(error.message);
           error.code = 1006;
           return Promise.reject(error);
+        }
+      }
+
+      function createArchiveElement(archive) {
+        const { createdAt, duration, status, url } = archive;
+
+        const createdAtDate = new Date(createdAt);
+        const date = createdAtDate.getDate();
+        const month = createdAtDate.getMonth();
+        const year = createdAtDate.getFullYear();
+        const hour = createdAtDate.getHours();
+        const minute = createdAtDate.getMinutes();
+        const dateText = `${date}-${month}-${year} ${hour}:${minute}`;
+
+        let durationText = '';
+        if (duration >= 60) {
+          const durationMinute = Math.floor(duration / 60);
+          const durationSeconds = Math.floor(duration % 60);
+          durationText = `${durationMinute}m ${durationSeconds}s`;
+        } else if (duration > 0) {
+          durationText = `${duration}s`;
+        }
+
+        const archiveElement = document.createElement('div');
+        archiveElement.style.width = '100%';
+        archiveElement.style.display = 'flex';
+        archiveElement.style.flexDirection = 'row';
+        archiveElement.style.padding = '16px';
+        archiveElement.style.alignItems = 'center';
+
+        const infoContainer = document.createElement('div');
+        infoContainer.style.display = 'flex';
+        infoContainer.style.flex = '1';
+        infoContainer.style.flexDirection = 'column';
+
+        const dateElement = document.createElement('div');
+        dateElement.innerText = dateText;
+        dateElement.style.fontWeight = '700';
+
+        const durationElement = document.createElement('div');
+        durationElement.innerText = `${status} ${durationText === '' ? '' : `- ${durationText}`}`;
+        durationElement.style.fontStyle = 'italic';
+
+        infoContainer.appendChild(dateElement);
+        infoContainer.appendChild(durationElement);
+
+        archiveElement.appendChild(infoContainer);
+
+        if (status === 'available') {
+          const downloadButton = document.createElement('button');
+          downloadButton.classList.add('Vlt-btn', 'Vlt-btn--tertiary', 'Vlt-btn--icon');
+          downloadButton.innerHTML='<svg><use xlink:href="volta-icons.svg#Vlt-icon-download-full" /></svg>';
+          downloadButton.onclick = () => window.open(url, '__blank');
+          
+          archiveElement.appendChild(downloadButton);
+        }
+
+        return archiveElement;
+      }
+
+      async function refreshArchives() {
+        try {
+          const url = `/archives?sessionId=${roomSessionId}`;
+          const response = await fetch(url);
+          const archives = await response.json();
+
+          refreshRecording(archives);
+
+          const archiveContainer = document.getElementById('archives-container');
+          archiveContainer.innerHTML = '';
+          const elements = archives.map(createArchiveElement);
+          for (let i = 0; i < elements.length; i += 1) {
+            const element = elements[i];
+            archiveContainer.appendChild(element);
+          }
+        } catch (error) {
+          console.error(error);
         }
       }
 
@@ -479,6 +577,9 @@
 
             // Set Stream Control Listener
             setStreamControlHoverListener();
+
+            // Refresh Archives
+            refreshArchives();
 
             // Automatically start publishing camera
             startCamera();
@@ -720,6 +821,54 @@
         }
       }
 
+      async function refreshRecording(archives) {
+        try {
+          let isRecording = false;
+          if (archives.length > 0) {
+            const archive = archives[0];
+            const { status } = archive;
+            isRecording = status === 'started' || status === 'paused';
+          }
+
+          recording = isRecording;
+          if (recording) {
+            document.getElementById('button-record').onclick = toggleRecord;
+            document.getElementById('button-record').classList.remove('Vlt-btn--tertiary');
+            document.getElementById('button-record').classList.add('Vlt-btn--destructive');
+          } else {
+            document.getElementById('button-record').onclick = toggleRecord;
+            document.getElementById('button-record').classList.remove('Vlt-btn--destructive');
+            document.getElementById('button-record').classList.add('Vlt-btn--tertiary');
+          }
+        } catch (error) {
+          console.error(error);
+        }
+      }
+
+      async function toggleRecord() {
+        try {
+          const url = `/archives`;
+          const action = recording ? 'stop' : 'start';
+          const body = {
+            sessionId: roomSessionId,
+            action,
+          };
+
+          // Disable Action
+          document.getElementById('button-record').onclick = null;
+
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+          });
+
+          await refreshArchives();
+        } catch (error) {
+          console.error(error);
+        }
+      }
+
       function toggleAudioEnable() {
         enableAudio = !enableAudio;
         cameraPublisher.publishAudio(enableAudio);
@@ -834,6 +983,7 @@
           max, ratio, 
           unpublish_delay, retry_limit,
           hide_control_delay,
+          role = 'user',
         } = params;
 
         const numberOfActiveSpeakers = parseInt((max || '4'), 10);
@@ -845,6 +995,7 @@
         retryCount = retryLimit;
         hideControlDelay = parseInt((hide_control_delay || '1000'), 10);
         roomName = room;
+        userRole = role;
 
         ({ adjustLayout, updateHighlight, addSelfSpeakerId, removeSelfSpeakerId } = OTLayout(layoutContainer, screenContainer, { aspectRatio, highlight }));
         otSpeech = OTSpeech({ numberOfActiveSpeakers });
@@ -859,6 +1010,14 @@
         } else {
           document.getElementById('session-control').hidden = false;
           document.getElementById('name-control').hidden = false;
+        }
+
+        if (userRole === 'admin') {
+          document.getElementById('recording').style.display = 'flex';
+          document.getElementById('recording').hidden = false;
+          document.getElementById('button-record').style.display = null;
+        } else {
+          document.getElementById('button-record').style.display = 'none';
         }
 
         document.title = roomName || 'Vonage Roundtable'
