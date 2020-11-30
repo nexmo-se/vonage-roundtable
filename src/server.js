@@ -34,6 +34,69 @@ app.use(bodyParser.json({ limit: requestMaxSize }));
 app.use('/', express.static('public'));
 app.get('/success', (_, res) => res.send('You have successfully deployed the Simple Opentok Audio Level'));
 
+const listArchives = (sessionId) => new Promise((resolve, reject) => {
+  const options = { sessionId };
+  client.listArchives(options, (error, archives) => {
+    if (error) {
+      reject(error);
+    } else {
+      resolve(archives);
+    }
+  });
+});
+
+const getArchive = async (sessionId) => {
+  try {
+    const archives = await listArchives(sessionId);
+    for (let i = 0; i < archives.length; i += 1) {
+      const archive = archives[i];
+      const { status } = archive;
+      if (status === 'started' || status === 'paused') {
+        return Promise.resolve(archive);
+      }
+    }
+
+    return Promise.resolve(null);
+  } catch (error) {
+    return Promise.reject(error);
+  }
+}
+
+const startArchive = (sessionId) => new Promise((resolve, reject) => {
+  client.startArchive(sessionId, { resolution: '1280x720' }, (error, archive) => {
+    if (error) {
+      reject(error);
+    } else {
+      resolve(archive);
+    }
+  });
+});
+
+const stopArchiveById = (archiveId) => new Promise((resolve, reject) => {
+  client.stopArchive(archiveId, (error, archive) => {
+    if (error) {
+      reject(error);
+    } else {
+      resolve(archive);
+    }
+  });
+});
+
+const stopArchive = async (sessionId) => {
+  try {
+    const archive = await getArchive(sessionId);
+    if (archive == null) {
+      return Promise.reject(new Error('No on-going archive for session'));
+    }
+
+    const archiveId = archive.id;
+    const stoppedArchive = await stopArchiveById(archiveId);
+    return Promise.resolve(stoppedArchive);
+  } catch (error) {
+    return Promise.reject(error);
+  }
+}
+
 const createSession = () => new Promise((resolve, reject) => {
   const options = { mediaMode: 'routed' };
   client.createSession(options, (error, session) => {
@@ -126,6 +189,34 @@ app.get('/token', async (req, res, next) => {
     next(error);
   }
 });
+
+app.get('/archives', async (req, res, next) => {
+  try {
+    const { sessionId } = req.query;
+    const archives = await listArchives(sessionId);
+    
+    res.json(archives);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post('/archives', async (req, res, next) => {
+  try {
+    const { sessionId, action } = req.body;
+    if (action === 'start') {
+      const archive = await startArchive(sessionId);
+      res.json(archive);
+    } else if (action === 'stop') {
+      const archive = await stopArchive(sessionId);
+      res.json(archive);
+    } else {
+      res.status(400).send('unknown action');
+    }
+  } catch (error) {
+    next(error);
+  }
+})
 
 // Create Application HTTP Server
 const httpServer = http.createServer(app);
