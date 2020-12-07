@@ -133,6 +133,19 @@
                     </div>
                   </div>
 
+                  <div id="mute-all" class="Vlt-form__element" style="display: none; flex-direction: column;" hidden>
+                    <label class="Vlt-label">Mute All (admin only)</label>
+                    <div class="Vlt-checkbox">
+                      <label for="mute-all-checkbox">
+                        <span class="Vlt-checkbox__button">
+                          <input id="mute-all-checkbox" type="checkbox" onchange="muteAll()" />
+                          <span class="Vlt-checkbox__icon"></span>
+                        </span>
+                        Mute All
+                      </label>
+                    </div>
+                  </div>
+
                   <div id="recording" class="Vlt-form__element" style="display: none; flex: 1; flex-direction: column;" hidden>
                     <label class="Vlt-label">Recording (admin only)</label>
                     <button class="Vlt-btn Vlt-btn--secondary Vlt-btn--app" onclick="refreshArchives()">Refresh</button>
@@ -236,6 +249,10 @@
             const response = await fetch(url);
             const data = await response.json();
             roomSessionId = data.sessionId;
+            
+            // Update Mute
+            document.getElementById('mute-all-checkbox').checked = data.muteOnJoin;
+            enableAudio = !data.muteOnJoin;
             return Promise.resolve(data);
           } catch (error) {
             console.log(error.message);
@@ -470,7 +487,15 @@
 
           OTSession.on('signal', (e) => {
             const { type, data } = e;
-            if (type === 'signal:chat') {
+
+            if (type === 'signal:muteall') {
+              console.log('received mute all signal');
+              enableAudio = false;
+              cameraPublisher.publishAudio(enableAudio);
+              
+              document.getElementById('button-audio-enable').classList.remove('Vlt-btn--primary');
+              document.getElementById('button-audio-enable').classList.add('Vlt-btn--tertiary');
+            } else if (type === 'signal:chat') {
               const { name, text } = JSON.parse(data);
 
               const row = document.createElement('div');
@@ -524,6 +549,8 @@
               document.getElementById('chat-container').appendChild(row);
 
               console.log(`${name}${isSelf ? ' (me)' : ''} - ${text}`);
+            } else {
+              console.log(`Signal: type ${type}, data ${data}`);
             }
           });
 
@@ -926,6 +953,20 @@
         otSpeech.setNumberOfActiveSpeakers(event.target.value);
       }
 
+      async function muteAll() {
+        const muteCheckbox = document.getElementById('mute-all-checkbox');
+        muteCheckbox.disabled = true;
+        try {
+          const mute = muteCheckbox.checked;
+          const url = `/muteAll?room=${roomName}&mute=${mute}`;
+          await fetch(url);
+        } catch (error) {
+          console.error(error);
+        } finally {
+          muteCheckbox.disabled = false;
+        }
+      }
+
       function sendChat() {
         const text = document.getElementById('chat-text').value;
         const name = document.getElementById('name').value;
@@ -1017,6 +1058,8 @@
         if (userRole === 'admin') {
           document.getElementById('recording').style.display = 'flex';
           document.getElementById('recording').hidden = false;
+          document.getElementById('mute-all').style.display = 'flex';
+          document.getElementById('mute-all').hidden = false;
           document.getElementById('button-record').style.display = null;
         } else {
           document.getElementById('button-record').style.display = 'none';

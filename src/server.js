@@ -218,8 +218,10 @@ app.get('/muteAll', async (req, res, next) => {
     const changes = { muteOnJoin: mute };
     await RoomSession.update(changes, query);
 
-    // Send Signal to Everyone
-    await sendMuteAllSignal(sessionId);
+    // Send Signal to Everyone if needs to mute
+    if (mute) {
+      await sendMuteAllSignal(sessionId);
+    }
     res.send('ok');
   } catch (error) {
     next(error);
