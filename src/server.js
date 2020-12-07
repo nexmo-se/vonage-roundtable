@@ -34,6 +34,16 @@ app.use(bodyParser.json({ limit: requestMaxSize }));
 app.use('/', express.static('public'));
 app.get('/success', (_, res) => res.send('You have successfully deployed the Simple Opentok Audio Level'));
 
+const sendMuteAllSignal = (sessionId) => new Promise((resolve, reject) => {
+  client.signal(sessionId, null, { type: 'muteall', data: 'muteall' }, (error) => {
+    if (error) {
+      reject(error);
+    } else {
+      resolve();
+    }
+  });
+});
+
 const listArchives = (sessionId) => new Promise((resolve, reject) => {
   const options = { sessionId };
   client.listArchives(options, (error, archives) => {
@@ -109,7 +119,7 @@ const createSession = () => new Promise((resolve, reject) => {
   })
 });
 
-const getRoomSessionId = async (room) => {
+const getRoomSession = async (room) => {
   const { RoomSession } = DatabaseService.models;
   try {
     const query = {
@@ -171,7 +181,7 @@ app.get('/token', async (req, res, next) => {
 
     if (room != null && room != '') {
       console.log(`Getting token for room: ${room}`);
-      const { sessionId: roomSessionId, muteOnJoin: roomMuteOnJoin } = await getRoomSessionId(room);
+      const { sessionId: roomSessionId, muteOnJoin: roomMuteOnJoin } = await getRoomSession(room);
       if (roomSessionId == null) {
         console.log('creating new session');
         const newSessionId = await createSession();
@@ -196,6 +206,25 @@ app.get('/token', async (req, res, next) => {
     next(error);
   }
 });
+
+app.get('/muteAll', async (req, res, next) => {
+  try {
+    const { room, mute = true } = req.query;
+    const { sessionId } = await getRoomSession(room);
+
+    // Update to Database
+    const { RoomSession } = DatabaseService.models;
+    const query = { where: { sessionId } };
+    const changes = { muteOnJoin: mute };
+    await RoomSession.update(changes, query);
+
+    // Send Signal to Everyone
+    await sendMuteAllSignal(sessionId);
+    res.send('ok');
+  } catch (error) {
+    next(error);
+  }
+})
 
 app.get('/archives', async (req, res, next) => {
   try {
