@@ -13,6 +13,11 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING(5000),
       allowNull: false,
     },
+    muteOnJoin: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      default: false,
+    },
     lastPing: {
       type: DataTypes.INTEGER,
       allowNull: false,

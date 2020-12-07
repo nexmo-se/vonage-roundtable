@@ -122,14 +122,14 @@ const getRoomSessionId = async (room) => {
     const roomSessionRaw = await RoomSession.findOne(query);
     if (roomSessionRaw == null) {
       console.log(`No such session: ${room}`)
-      return Promise.resolve(null);
+      return Promise.resolve({});
     }
 
     const roomSession = roomSessionRaw.dataValues;
     const currentTime = Math.floor(new Date().getTime() / 1000);
     if ((roomSession.lastPing + sessionExpiryDelay) < currentTime) {
       console.log(`Room session has expired`);
-      return Promise.resolve(null);
+      return Promise.resolve({});
     }
     
     
@@ -137,7 +137,7 @@ const getRoomSessionId = async (room) => {
     roomSessionRaw.lastPing = currentTime;
     await roomSessionRaw.save();
 
-    return Promise.resolve(roomSession.sessionId);
+    return Promise.resolve(roomSession);
   } catch (error) {
     return Promise.reject(error);
   }
@@ -146,14 +146,16 @@ const getRoomSessionId = async (room) => {
 const createRoomSession = async (room, sessionId) => {
   const { RoomSession } = DatabaseService.models;
   try {
-    await RoomSession.create({
+    const roomSessionRaw = await RoomSession.create({
       id: uuid(),
       room,
       sessionId,
       lastPing: Math.floor(new Date().getTime() / 1000),
+      muteOnJoin: false,
       deleted: 0,
     });
-    return Promise.resolve(sessionId);
+    const roomSession = roomSessionRaw.dataValues;
+    return Promise.resolve(roomSession);
   } catch (error) {
     return Promise.reject(error);
   }
@@ -165,17 +167,21 @@ app.get('/token', async (req, res, next) => {
     const { room } = req.query;
 
     let sanitizedSessionId = sessionId;
+    let muteOnJoin = false;
+
     if (room != null && room != '') {
       console.log(`Getting token for room: ${room}`);
-      const roomSessionId = await getRoomSessionId(room);
+      const { sessionId: roomSessionId, muteOnJoin: roomMuteOnJoin } = await getRoomSessionId(room);
       if (roomSessionId == null) {
         console.log('creating new session');
         const newSessionId = await createSession();
-        await createRoomSession(room, newSessionId);
-        sanitizedSessionId = newSessionId;
+        const { sessionId: newRoomSessionId, muteOnJoin: newRoomMuteOnJoin } = await createRoomSession(room, newSessionId);
+        sanitizedSessionId = newRoomSessionId;
+        muteOnJoin = newRoomMuteOnJoin;
       } else {
         console.log('using existing session');
         sanitizedSessionId = roomSessionId;
+        muteOnJoin = roomMuteOnJoin;
       }
     }
 
@@ -184,6 +190,7 @@ app.get('/token', async (req, res, next) => {
       apiKey,
       sessionId: sanitizedSessionId,
       token,
+      muteOnJoin,
     });
   } catch (error) {
     next(error);
