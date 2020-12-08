@@ -23,6 +23,11 @@
       "description": "Delay after the last session ID and token request for room before the session ID expires (in seconds)",
       "required": true,
       "value": "9000"
+    },
+    "DATABASE_USE_SSL": {
+      "description": "Enable SSL for database connection. Set to true for Heroku",
+      "required": true,
+      "value": "true"
     }
   }
 }
