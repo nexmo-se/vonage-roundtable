@@ -16,7 +16,7 @@
       "required": true
     },
     "SESSION_ID": {
-      "description": "Session Id to be used in application",
+      "description": "Default Session Id to be used in application if room is not specified",
       "required": true
     },
     "SESSION_EXPIRY_DELAY": {
