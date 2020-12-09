@@ -209,17 +209,20 @@ app.get('/token', async (req, res, next) => {
 
 app.get('/muteAll', async (req, res, next) => {
   try {
-    const { room, mute = true } = req.query;
+    const { room, mute = 'true' } = req.query;
     const { sessionId } = await getRoomSession(room);
+
+    const boolMute = mute === 'true';
 
     // Update to Database
     const { RoomSession } = DatabaseService.models;
     const query = { where: { sessionId } };
-    const changes = { muteOnJoin: mute };
+    const changes = { muteOnJoin: boolMute };
     await RoomSession.update(changes, query);
 
     // Send Signal to Everyone if needs to mute
-    if (mute) {
+    if (boolMute) {
+      console.log('Sending Mute All Signal');
       await sendMuteAllSignal(sessionId);
     }
     res.send('ok');
