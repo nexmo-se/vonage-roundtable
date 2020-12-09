@@ -147,6 +147,8 @@ OTLayout = (layoutContainer, screenContainer, options) => {
     screenContainerElement.style.display = hasScreens ? 'flex' : 'none';
     layoutContainerElement.style.width = hasScreens ? '200px' : '100%';
     layoutContainerElement.style['flex-direction'] = hasScreens ? 'column' : 'row';
+    layoutContainerElement.style['flex-wrap'] = hasScreens ? null : 'wrap';
+    layoutContainerElement.style['overflow-y'] = hasScreens ? 'scroll' : null;
 
     // Update Screen Dimensions
     const screenDimension = getDynamicLayoutDimensions(numberOfScreens, true);
