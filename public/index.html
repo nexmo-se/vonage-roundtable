@@ -500,6 +500,7 @@
               
               document.getElementById('button-audio-enable').classList.remove('Vlt-btn--primary');
               document.getElementById('button-audio-enable').classList.add('Vlt-btn--tertiary');
+              document.getElementById('button-audio-enable').innerHTML = `<svg><use xlink:href="volta-icons.svg#Vlt-icon-microphone-mute-full" /></svg>`;
             } else if (type === 'signal:chat') {
               const { name, text } = JSON.parse(data);
 
@@ -594,17 +595,21 @@
             if (enableAudio) {
               document.getElementById('button-audio-enable').classList.remove('Vlt-btn--tertiary');
               document.getElementById('button-audio-enable').classList.add('Vlt-btn--primary');
+              document.getElementById('button-audio-enable').innerHTML = `<svg><use xlink:href="volta-icons.svg#Vlt-icon-microphone-full" /></svg>`;
             } else {
               document.getElementById('button-audio-enable').classList.remove('Vlt-btn--primary');
               document.getElementById('button-audio-enable').classList.add('Vlt-btn--tertiary');
+              document.getElementById('button-audio-enable').innerHTML = `<svg><use xlink:href="volta-icons.svg#Vlt-icon-microphone-mute-full" /></svg>`;
             }
             
             if (enableVideo) {
               document.getElementById('button-video-enable').classList.remove('Vlt-btn--tertiary');
               document.getElementById('button-video-enable').classList.add('Vlt-btn--primary');
+              document.getElementById('button-video-enable').innerHTML = `<svg><use xlink:href="volta-icons.svg#Vlt-icon-video-negative" /></svg>`;
             } else {
               document.getElementById('button-video-enable').classList.remove('Vlt-btn--primary');
               document.getElementById('button-video-enable').classList.add('Vlt-btn--tertiary');
+              document.getElementById('button-video-enable').innerHTML = `<svg><use xlink:href="volta-icons.svg#Vlt-icon-video-off-full" /></svg>`;
             }
 
             // Set Stream Control Listener
@@ -908,9 +913,11 @@
         if (enableAudio) {
           document.getElementById('button-audio-enable').classList.remove('Vlt-btn--tertiary');
           document.getElementById('button-audio-enable').classList.add('Vlt-btn--primary');
+          document.getElementById('button-audio-enable').innerHTML = `<svg><use xlink:href="volta-icons.svg#Vlt-icon-microphone-full" /></svg>`;
         } else {
           document.getElementById('button-audio-enable').classList.remove('Vlt-btn--primary');
           document.getElementById('button-audio-enable').classList.add('Vlt-btn--tertiary');
+          document.getElementById('button-audio-enable').innerHTML = `<svg><use xlink:href="volta-icons.svg#Vlt-icon-microphone-mute-full" /></svg>`;
         }
       }
 
@@ -921,9 +928,11 @@
         if (enableVideo) {
           document.getElementById('button-video-enable').classList.remove('Vlt-btn--tertiary');
           document.getElementById('button-video-enable').classList.add('Vlt-btn--primary');
+          document.getElementById('button-video-enable').innerHTML = `<svg><use xlink:href="volta-icons.svg#Vlt-icon-video-negative" /></svg>`;
         } else {
           document.getElementById('button-video-enable').classList.remove('Vlt-btn--primary');
           document.getElementById('button-video-enable').classList.add('Vlt-btn--tertiary');
+          document.getElementById('button-video-enable').innerHTML = `<svg><use xlink:href="volta-icons.svg#Vlt-icon-video-off-full" /></svg>`;
         }
       }
 
