@@ -4,8 +4,8 @@
     <title>Vonage Roundtable</title>
 
     <script src="https://static.opentok.com/v2/js/opentok.min.js"></script>
-    <script src="audioLevel.js"></script>
-    <script src="layout.js"></script>
+    <script src="lib/audioLevel/audioLevel.js"></script>
+    <script src="lib/layout/layout.js"></script>
 
     <style>
       body, div {
@@ -1039,7 +1039,7 @@
         };
       }
 
-      if (window.location.href.toString().indexOf('http://') === 0) {
+      if (window.location.href.toString().indexOf('http://') === 0 && window.location.href.toString().indexOf('http://localhost') !== 0) {
         window.location.href = window.location.href.toString().replace("http://", "https://");
       }
 
