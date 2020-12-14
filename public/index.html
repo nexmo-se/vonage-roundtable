@@ -1039,7 +1039,7 @@
         };
       }
 
-      if (window.location.indexOf('http://') === 0) {
+      if (window.location.href.toString().indexOf('http://') === 0) {
         window.location.href = window.location.href.toString().replace("http://", "https://");
       }
 
