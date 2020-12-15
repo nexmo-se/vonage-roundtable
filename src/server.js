@@ -32,7 +32,7 @@ app.use(bodyParser.urlencoded({ extended: true, limit: requestMaxSize }));
 app.use(bodyParser.json({ limit: requestMaxSize }));
 
 app.use('/', express.static('public'));
-app.get('/success', (_, res) => res.send('You have successfully deployed the Simple Opentok Audio Level'));
+app.get('/success', (_, res) => res.send('You have successfully deployed the Vonage Roundtable Application'));
 
 const sendMuteAllSignal = (sessionId) => new Promise((resolve, reject) => {
   client.signal(sessionId, null, { type: 'muteall', data: 'muteall' }, (error) => {

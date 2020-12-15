@@ -1,7 +1,7 @@
 {
-  "name": "Simple Opentok Audio Level",
-  "description": "A simple Opentok Audio Level application",
-  "repository": "https://github.com/nexmo-se/simple-opentok-audio-level",
+  "name": "Vonage Roundtable",
+  "description": "Roundtable sample application with automatic subscribe/unsubscribe video when the participant becomes one of the top active speakers. This allows for reduced bandwidth consumption for videos on participants who are keeping silence. Audio will continue to be published and subscribed unless the participant decided to mute himself/herself.",
+  "repository": "https://github.com/nexmo-se/vonage-roundtable",
   "logo": "https://node-js-sample.herokuapp.com/node.png",
   "addons": [
     "heroku-postgresql:hobby-dev"

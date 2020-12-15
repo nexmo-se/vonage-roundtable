@@ -1,5 +1,6 @@
-# Simple Opentok Audio Level Sample Application
-Simple Opentok Audio Level Sample
+# Vonage Roundtable for Multiparty Conference
+Roundtable sample application with automatic subscribe/unsubscribe video when the participant becomes one of the top active speakers.
+This allows for reduced bandwidth consumption for videos on participants who are keeping silence. Audio will continue to be published and subscribed unless the participant decided to mute himself/herself.
 
 ### Setup (Local)
 1. clone this repo
@@ -8,7 +9,7 @@ Simple Opentok Audio Level Sample
 4. run `npm start`
 
 ### Setup (Heroku)
-[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/nexmo-se/simple-opentok-audio-level)
+[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/nexmo-se/vonage-roundtable)
 
 # Using the application
 
