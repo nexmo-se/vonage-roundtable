@@ -26,9 +26,9 @@
     </style>
     <link rel="stylesheet" href="volta.min.css">
   </head>
-  <body style="display: flex; flex-direction: row; width: 100%; height: 100vh;">
+  <body style="display: flex; flex-direction: row; width: 100%; height: 100vh; max-width: 100%;">
     <div id="videoContainer" style="position: relative; display: flex; flex: 1; height: 100vh; flex-direction: row; background-color: black;">
-      <div id="screenContainer" style="position: relative; display: flex; flex: 1; height: 100vh; background-color: black;"></div>
+      <div id="screenContainer" style="position: relative; display: flex; flex: 1; height: 100vh; background-color: black; overflow: hidden;"></div>
       <div id="layoutContainer" style="position: relative; display: flex; width: 100%; height: 100vh; background-color: black; flex-direction: row;"></div>
 
       <div id="stream-control" style="width: 100%; position: absolute; z-index: 9999; bottom: 50px; left: 0; right: 0;" hidden>
@@ -44,6 +44,9 @@
           </button>
           <button id="button-screen-share" class="Vlt-btn Vlt-btn--large Vlt-btn--tertiary Vlt-btn--icon" onclick="toggleScreen()">
             <svg><use xlink:href="volta-icons.svg#Vlt-icon-screen-share-full" /></svg>
+          </button>
+          <button id="button-video-player" class="Vlt-btn Vlt-btn--large Vlt-btn--tertiary Vlt-btn--icon" onclick="toggleVideoPlayer()">
+            <svg><use xlink:href="volta-icons.svg#Vlt-icon-small-video-full" /></svg>
           </button>
           <button id="button-cycle-camera" class="Vlt-btn Vlt-btn--large Vlt-btn--tertiary Vlt-btn--icon" onclick="cycleCamera()">
             <svg><use xlink:href="volta-icons.svg#Vlt-icon-camera-switch-full" /></svg>
@@ -197,6 +200,10 @@
       let tokenParam = null;
       let cameraPublisher = null;
       let screenPublisher = null;
+      let videoPublisher = null;
+
+      let videoPlayerElement = null;
+      let videoPlayerContainer = null;
 
       let recording = false;
       let enableAudio = true; // Assume not > 16 speakers
@@ -242,8 +249,6 @@
           if (splitIndex >= 0) {
             const rawKey = component.slice(0, splitIndex);
             const rawValue = component.slice(splitIndex + 1);
-            console.log(rawKey);
-            console.log(rawValue);
             const key = decodeURIComponent(rawKey);
             const value = decodeURIComponent(rawValue);
             params[key] = value;
@@ -425,7 +430,7 @@
           console.log('Session Created');
 
           OTSession.on('streamCreated', (event) => {
-            const layoutContainer = event.stream.videoType === 'screen' ? 'screenContainer' : 'layoutContainer';
+            const layoutContainer = event.stream.videoType === 'screen' || event.stream.videoType === 'custom' ? 'screenContainer' : 'layoutContainer';
             const subscriber = OTSession.subscribe(event.stream, insertDefaultUI ? layoutContainer : null, {
               insertMode: insertDefaultUI ? 'append' : undefined, // not using insert mode for insertDefaultUI true
               fitMode: insertDefaultUI ? 'contain' : undefined, // not using fit mode for insertDefaultUI true
@@ -458,7 +463,7 @@
                 divElement.style.margin = 'auto';
                 divElement.appendChild(videoElement);
 
-                const layoutContainer = event.stream.videoType === 'screen' ? 'screenContainer' : 'layoutContainer';
+                const layoutContainer = event.stream.videoType === 'screen' || event.stream.videoType === 'custom' ? 'screenContainer' : 'layoutContainer';
                 document.getElementById(layoutContainer).appendChild(divElement);
 
                 otSpeech.notifySpeakerChange();
@@ -649,6 +654,7 @@
         // Use Stream ID for InsertDefaultUI false
         const mappedPositions = positions.map(position => insertDefaultUI ? otSpeech.getSubscriberIdByStreamId(position) : position)
           .filter(subscriberId => subscriberId != null);
+
         adjustLayout(mappedPositions, numberOfActiveSpeakers);
         updateSpeakerPins();
       }
@@ -676,6 +682,24 @@
           startScreen();
         } else {
           stopScreen();
+        }
+      }
+
+      function toggleVideoPlayer() {
+        if (videoPublisher == null) {
+          const fileInput = document.createElement('input');
+          fileInput.type = 'file';
+          fileInput.onchange = () => {
+            if (fileInput.files.length <= 0) {
+              return;
+            }
+
+            const file = fileInput.files[0];
+            startVideoPlayer(file);
+          }
+          fileInput.click();
+        } else {
+          stopVideoPlayer();
         }
       }
       
@@ -803,6 +827,112 @@
 
         document.getElementById('button-screen-share').classList.remove('Vlt-btn--primary');
         document.getElementById('button-screen-share').classList.add('Vlt-btn--tertiary');
+
+        otSpeech.notifySpeakerChange();
+      }
+
+      async function startVideoPlayer(file) {
+        stopVideoPlayer();
+        try {
+          const name = document.getElementById('name').value;
+          if (name == null || name === '') {
+            alert('Please provide a name');
+            return;
+          }
+
+          videoPlayerElement = document.createElement('video');
+          videoPlayerElement.classList.add('OT_video-element');
+          videoPlayerElement.style.minWidth = "100%";
+          videoPlayerElement.style.minHeight = "100%";
+          videoPlayerElement.style.width = "160";
+          videoPlayerElement.style.height = "90";
+
+          videoPlayerContainer = document.createElement('div');
+          videoPlayerContainer.style.display = 'flex';
+          videoPlayerContainer.style.overflow = 'hidden';
+
+          videoPlayerContainer.appendChild(videoPlayerElement);
+          document.getElementById('screenContainer').appendChild(videoPlayerContainer);
+          otSpeech.notifySpeakerChange();
+
+          const objectUrl = URL.createObjectURL(file);
+          videoPlayerElement.src = objectUrl;
+          videoPlayerElement.controls = true;
+          videoPlayerElement.onloadeddata = () => {
+            const mediaStream = videoPlayerElement.captureStream();
+
+            const videoTracks = mediaStream.getVideoTracks();
+            const audioTracks = mediaStream.getAudioTracks();
+
+            const hasVideo = videoTracks && videoTracks.length > 0;
+            const hasAudio = audioTracks && audioTracks.length > 0;
+
+            const videoSource = hasVideo ? videoTracks[0] : null;
+            const audioSource = hasAudio ? audioTracks[0] : null;
+
+            videoPublisher = OT.initPublisher(null, {
+              audioSource: audioSource,
+              videoSource: videoSource,
+              publishVideo: hasVideo,
+              publishAudio: hasAudio,
+              insertDefaultUI: false,
+              name: `${name}-video`,
+              resolution: '1280x720',
+              style: { nameDisplayMode: "off" }
+            }, (error) => {
+              if (error) {
+                handleError(error);
+                stopVideoPlayer();
+                return;
+              }
+              
+              // Publish to Session
+              OTSession.publish(videoPublisher, (err) => {
+                if (err) {
+                  handleError(error);
+                  return;
+                }
+
+                document.getElementById('button-video-player').classList.remove('Vlt-btn--tertiary');
+                document.getElementById('button-video-player').classList.add('Vlt-btn--primary');
+                
+                otSpeech.notifySpeakerChange();
+              })
+            });
+
+            videoPublisher.on('streamCreated', (event) => {
+              otSpeech.notifySpeakerChange();
+            });
+
+            videoPublisher.on('streamDestroyed', (event) => {
+              stopVideoPlayer();
+            });
+          };
+          videoPlayerElement.play();
+        } catch (error) {
+          handleError(error);
+        }
+      }
+      
+      function stopVideoPlayer() {
+        if (videoPublisher != null) {
+          OTSession.unpublish(videoPublisher);
+          videoPublisher = null;
+        }
+
+        // Delete Old Video if available
+        if (videoPlayerElement != null) {
+          videoPlayerContainer.removeChild(videoPlayerElement);
+          document.getElementById('screenContainer').removeChild(videoPlayerContainer);
+
+          videoPlayerElement.pause();
+          videoPlayerElement.removeAttribute('src');
+          videoPlayerElement.load();
+          videoPlayerElement = null;
+        }
+
+        document.getElementById('button-video-player').classList.remove('Vlt-btn--primary');
+        document.getElementById('button-video-player').classList.add('Vlt-btn--tertiary');
 
         otSpeech.notifySpeakerChange();
       }
