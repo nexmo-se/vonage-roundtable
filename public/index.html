@@ -717,6 +717,7 @@
             publishVideo: enableVideo,
             fitMode: 'contain',
             insertMode: 'append',
+            showControls: false,
             name,
             width: '100%',
             resolution: `${publisherResolution.width}x${publisherResolution.height}`,
@@ -783,6 +784,7 @@
             insertMode: 'append',
             name: `${name}-screen`,
             resolution: '1280x720',
+            showControls: false,
             width: '100%',
             height: '100vh',
             style: { nameDisplayMode: "off" }
@@ -879,6 +881,7 @@
               publishAudio: hasAudio,
               insertDefaultUI: false,
               name: `${name}-video`,
+              showControls: false,
               resolution: '1280x720',
               style: { nameDisplayMode: "off" }
             }, (error) => {
