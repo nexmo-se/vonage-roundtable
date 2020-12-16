@@ -859,7 +859,9 @@
           videoPlayerElement.src = objectUrl;
           videoPlayerElement.controls = true;
           videoPlayerElement.onloadeddata = () => {
-            const mediaStream = videoPlayerElement.captureStream();
+            const mediaStream = videoPlayerElement.captureStream != null
+              ? videoPlayerElement.captureStream() // Newer Browsers
+              : videoPlayerElement.mozCaptureStream(); // Older Firefox
 
             const videoTracks = mediaStream.getVideoTracks();
             const audioTracks = mediaStream.getAudioTracks();
