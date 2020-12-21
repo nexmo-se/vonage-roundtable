@@ -33,24 +33,47 @@
 
       <div id="stream-control" style="width: 100%; position: absolute; z-index: 9999; bottom: 50px; left: 0; right: 0;" hidden>
         <div style="display: flex; flex-direction: row; justify-content: center; align-items: center;">
-          <button id="button-record" class="Vlt-btn Vlt-btn--large Vlt-btn--tertiary Vlt-btn--icon" onclick="toggleRecord()">
-            <svg><use xlink:href="volta-icons.svg#Vlt-icon-rec-full" /></svg>
-          </button>
-          <button id="button-video-enable" class="Vlt-btn Vlt-btn--large Vlt-btn--primary Vlt-btn--icon" onclick="toggleVideoEnable()">
-            <svg><use xlink:href="volta-icons.svg#Vlt-icon-video-negative" /></svg>
-          </button>
-          <button id="button-audio-enable" class="Vlt-btn Vlt-btn--large Vlt-btn--primary Vlt-btn--icon" onclick="toggleAudioEnable()">
-            <svg><use xlink:href="volta-icons.svg#Vlt-icon-microphone-full" /></svg>
-          </button>
-          <button id="button-screen-share" class="Vlt-btn Vlt-btn--large Vlt-btn--tertiary Vlt-btn--icon" onclick="toggleScreen()">
-            <svg><use xlink:href="volta-icons.svg#Vlt-icon-screen-share-full" /></svg>
-          </button>
-          <button id="button-video-player" class="Vlt-btn Vlt-btn--large Vlt-btn--tertiary Vlt-btn--icon" onclick="toggleVideoPlayer()">
-            <svg><use xlink:href="volta-icons.svg#Vlt-icon-small-video-full" /></svg>
-          </button>
-          <button id="button-cycle-camera" class="Vlt-btn Vlt-btn--large Vlt-btn--tertiary Vlt-btn--icon" onclick="cycleCamera()">
-            <svg><use xlink:href="volta-icons.svg#Vlt-icon-camera-switch-full" /></svg>
-          </button>
+          <div class="Vlt-tooltip Vlt-tooltip--top" title="Record Meeting">
+            <button id="button-record" class="Vlt-btn Vlt-btn--large Vlt-btn--tertiary Vlt-btn--icon" style="margin-left: 5px; margin-right: 5px;" onclick="toggleRecord()">
+              <svg><use xlink:href="volta-icons.svg#Vlt-icon-rec-full" /></svg>
+            </button>
+          </div>
+
+          <div class="Vlt-tooltip Vlt-tooltip--top" style="margin-left: 5px; margin-right: 5px;" title="Enable/Disable Video">
+            <button id="button-video-enable" class="Vlt-btn Vlt-btn--large Vlt-btn--primary Vlt-btn--icon" onclick="toggleVideoEnable()">
+              <svg><use xlink:href="volta-icons.svg#Vlt-icon-video-negative" /></svg>
+            </button>
+          </div>
+
+          <div class="Vlt-tooltip Vlt-tooltip--top" style="margin-left: 5px; margin-right: 5px;" title="Mute/Unmute">
+            <button id="button-audio-enable" class="Vlt-btn Vlt-btn--large Vlt-btn--primary Vlt-btn--icon" onclick="toggleAudioEnable()">
+              <svg><use xlink:href="volta-icons.svg#Vlt-icon-microphone-full" /></svg>
+            </button>
+          </div>
+
+          <div class="Vlt-tooltip Vlt-tooltip--top" style="margin-left: 5px; margin-right: 5px;" title="Screenshare">
+            <button id="button-screen-share" class="Vlt-btn Vlt-btn--large Vlt-btn--tertiary Vlt-btn--icon" onclick="toggleScreen()">
+              <svg><use xlink:href="volta-icons.svg#Vlt-icon-screen-share-full" /></svg>
+            </button>
+          </div>
+
+          <div class="Vlt-tooltip Vlt-tooltip--top" style="margin-left: 5px; margin-right: 5px;" title="Video Player">
+            <button id="button-video-player" class="Vlt-btn Vlt-btn--large Vlt-btn--tertiary Vlt-btn--icon" onclick="toggleVideoPlayer()">
+              <svg><use xlink:href="volta-icons.svg#Vlt-icon-small-video-full" /></svg>
+            </button>
+          </div>
+
+          <div class="Vlt-tooltip Vlt-tooltip--top" style="margin-left: 5px; margin-right: 5px;" title="Cycle Camera">
+            <button id="button-cycle-camera" class="Vlt-btn Vlt-btn--large Vlt-btn--tertiary Vlt-btn--icon" onclick="cycleCamera()">
+              <svg><use xlink:href="volta-icons.svg#Vlt-icon-camera-switch-full" /></svg>
+            </button>
+          </div>
+          
+          <div class="Vlt-tooltip Vlt-tooltip--top" style="margin-left: 5px; margin-right: 5px;" title="End Meeting">
+            <button id="button-end-call" class="Vlt-btn Vlt-btn--large Vlt-btn--destructive Vlt-btn--icon" onclick="endCall()">
+              <svg><use xlink:href="volta-icons.svg#Vlt-icon-phone-down-full" /></svg>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -950,6 +973,10 @@
         otSpeech.notifySpeakerChange();
       }
 
+      function endCall() {
+        window.location.href = "/thankyou.html";
+      }
+
       function updateSpeakerPins() {
         // Fill Available Speaker List
         const speakerElements = otSpeech.getOrderedChannels()
@@ -1187,7 +1214,7 @@
       }
 
       waitForReady(() => {
-        Volta.init(['tab']);
+        Volta.init(['tab', 'tooltip']);
 
         const params = getParams();
         let {
@@ -1241,5 +1268,7 @@
     </script>
     
     <script src="volta.min.js"></script>
+    <script src="popper.min.js"></script>
+    <script src="tooltip.min.js"></script>
   </body>
 </html>
