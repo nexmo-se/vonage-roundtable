@@ -471,6 +471,10 @@
             } else {
               otSpeech.notifySpeakerChange();
             }
+
+            // Play Join Sound
+            const audio = new Audio('sounds/join.mp3');
+            audio.play();
           });
 
           OTSession.on('streamDestroyed', (event) => {
@@ -492,6 +496,10 @@
             }
 
             otSpeech.notifySpeakerChange();
+
+            // Play Leave Sound
+            const audio = new Audio('sounds/leave.mp3');
+            audio.play();
           });
 
           OTSession.on('sessionDisconnected', (event) => {
