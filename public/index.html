@@ -269,6 +269,27 @@
       }
       // Listen for Window Resize
       window.addEventListener('resize', () => notifySpeakerChange());
+
+      
+      function playSoundEffect() {
+        if (enableSoundEffect) {
+          const audio = new Audio('sounds/vbc.mp3');
+          audio.play();
+        }
+      }
+
+      // Debouncing logic for sound effect
+      let soundEffectTimeout = null;
+
+      function playSoundEffectDebounce() {
+        // Clear timeout if exist
+        if (soundEffectTimeout != null) {
+          clearTimeout(soundEffectTimeout);
+        }
+
+        // Set new timeout for actual sound effect
+        soundEffectTimeout = setTimeout(() => playSoundEffect(), 500);
+      }
       
       function waitForReady(callback) {
         /in/.test(document.readyState) ? setTimeout('waitForReady('+callback+')', 9) : callback();
@@ -510,10 +531,7 @@
             }
 
             // Play Join Sound
-            if (enableSoundEffect) {
-              const audio = new Audio('sounds/vbc.mp3');
-              audio.play();
-            }
+            playSoundEffectDebounce();
           });
 
           OTSession.on('streamDestroyed', (event) => {
@@ -537,10 +555,7 @@
             otSpeech.notifySpeakerChange();
 
             // Play Leave Sound
-            if (enableSoundEffect) {
-              const audio = new Audio('sounds/vbc.mp3');
-              audio.play();
-            }
+            playSoundEffectDebounce();
           });
 
           OTSession.on('sessionDisconnected', (event) => {
