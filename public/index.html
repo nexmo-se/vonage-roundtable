@@ -140,6 +140,19 @@
 
               <div class="Vlt-tabs__panel" style="height: 100%;">
                 <div style="height: 100%; display: flex; flex-direction: column;">
+                  <div id="enable-sound" class="Vlt-form__element" style="display: flex; flex-direction: column;">
+                    <label class="Vlt-label">Enable Sound Effect</label>
+                    <div class="Vlt-checkbox">
+                      <label for="enable-sound-checkbox">
+                        <span class="Vlt-checkbox__button">
+                          <input id="enable-sound-checkbox" type="checkbox" onchange="enableSound()" checked />
+                          <span class="Vlt-checkbox__icon"></span>
+                        </span>
+                        Enable Sound Effect
+                      </label>
+                    </div>
+                  </div>
+
                   <div class="Vlt-form__element">
                     <label class="Vlt-label" for="number-of-active-speakers-select">Number of on-screen speakers</label>
                     <div class="Vlt-select">
@@ -229,6 +242,7 @@
       let videoPlayerContainer = null;
 
       let recording = false;
+      let enableSoundEffect = true;
       let enableAudio = true; // Assume not > 16 speakers
       let enableVideo = true; // Assume not > 16 speakers
       let unpublishDelay = 30; // 30s of disable audio + video to consider unpublishing
@@ -496,8 +510,10 @@
             }
 
             // Play Join Sound
-            const audio = new Audio('sounds/vbc.mp3');
-            audio.play();
+            if (enableSoundEffect) {
+              const audio = new Audio('sounds/vbc.mp3');
+              audio.play();
+            }
           });
 
           OTSession.on('streamDestroyed', (event) => {
@@ -521,8 +537,10 @@
             otSpeech.notifySpeakerChange();
 
             // Play Leave Sound
-            const audio = new Audio('sounds/vbc.mp3');
-            audio.play();
+            if (enableSoundEffect) {
+              const audio = new Audio('sounds/vbc.mp3');
+              audio.play();
+            }
           });
 
           OTSession.on('sessionDisconnected', (event) => {
@@ -1160,6 +1178,13 @@
         }
       }
 
+      function enableSound() {
+        const enableSoundCheckbox = document.getElementById('enable-sound-checkbox');
+        enableSoundCheckbox.disabled = true;
+        enableSoundEffect = enableSoundCheckbox.checked;
+        enableSoundCheckbox.disabled = false;
+      }
+
       function sendChat() {
         const text = document.getElementById('chat-text').value;
         const name = document.getElementById('name').value;
@@ -1224,6 +1249,7 @@
           unpublish_delay, retry_limit,
           hide_control_delay,
           role = 'user',
+          sound,
         } = params;
 
         const numberOfActiveSpeakers = parseInt((max || '4'), 10);
@@ -1236,6 +1262,7 @@
         hideControlDelay = parseInt((hide_control_delay || '1000'), 10);
         roomName = room;
         userRole = role;
+        enableSoundEffect = (sound || 'true') === 'true';
 
         ({ adjustLayout, updateHighlight, addSelfSpeakerId, removeSelfSpeakerId } = OTLayout(layoutContainer, screenContainer, { aspectRatio, highlight }));
         otSpeech = OTSpeech({ numberOfActiveSpeakers });
@@ -1261,6 +1288,8 @@
         } else {
           document.getElementById('button-record').style.display = 'none';
         }
+
+        document.getElementById('enable-sound-checkbox').checked = enableSoundEffect;
 
         document.title = roomName || 'Vonage Roundtable'
         document.getElementById('number-of-active-speakers-select').value = numberOfActiveSpeakers;
