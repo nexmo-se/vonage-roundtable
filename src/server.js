@@ -1,6 +1,7 @@
 require('dotenv').config();
 
 const axios = require('axios');
+const libRequest = require('request');
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
@@ -51,6 +52,17 @@ const listArchives = (sessionId) => new Promise((resolve, reject) => {
       reject(error);
     } else {
       resolve(archives);
+    }
+  });
+});
+
+const getArchiveById = (archiveId) => new Promise((resolve, reject) => {
+  const options = { sessionId };
+  client.getArchive(archiveId, (error, archive) => {
+    if (error) {
+      reject(error);
+    } else {
+      resolve(archive);
     }
   });
 });
@@ -229,7 +241,20 @@ app.get('/muteAll', async (req, res, next) => {
   } catch (error) {
     next(error);
   }
-})
+});
+
+app.get('/archives/:archiveId/download', async (req, res, next) => {
+  try {
+    const { archiveId } = req.params;
+    const archive = await getArchiveById(archiveId)
+    const { url } = archive;
+    
+    console.log(`Archive to Download: ${archiveId}`);
+    libRequest.get(url).pipe(res);
+  } catch (error) {
+    next(error);
+  }
+});
 
 app.get('/archives', async (req, res, next) => {
   try {

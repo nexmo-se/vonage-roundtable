@@ -380,7 +380,7 @@
       }
 
       function createArchiveElement(archive) {
-        const { createdAt, duration, status, url } = archive;
+        const { id, createdAt, duration, status, url } = archive;
 
         const createdAtDate = new Date(createdAt);
         const date = createdAtDate.getDate();
@@ -431,8 +431,8 @@
           //downloadButton.onclick = () => window.open(url, '__blank');
           downloadButton.onclick = () => {
             const aElement = document.createElement('a');
-            aElement.href = url;
-            aElement.download = url.substr(url.lastIndexOf('/') + 1);
+            aElement.href = `/archives/${id}/download`;
+            aElement.download = 'archive.mp4';
             aElement.click();
           };
           
