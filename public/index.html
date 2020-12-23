@@ -135,6 +135,7 @@
               </div>
 
               <div class="Vlt-tabs__panel" style="height: 100%;">
+                <div><label id="participant-count" class="Vlt-label">Enable Sound Effect</label></div>
                 <div id="speaker-list" style="padding: 16px; border: 1px solid #c2c4cc; border-radius: 5px; background-color: #fff;"></div>
               </div>
 
@@ -251,6 +252,7 @@
       let roomName = null;
       let roomSessionId = null;
       let userRole = 'user';
+      let connectionCount = 0;
 
       let streamControlHideTimeout = null;
       let hideControlDelay = 1000; // in milliseconds
@@ -493,6 +495,21 @@
           OTSession = OT.initSession(apiKey, sessionId);
           console.log('Session Created');
 
+          OTSession.on("connectionCreated", function(event) {
+            connectionCount++;
+            updateConnectionCount();
+
+            // Play Join Sound
+            playSoundEffectDebounce();
+          });
+          OTSession.on("connectionDestroyed", function(event) {
+            connectionCount--;
+            updateConnectionCount();
+
+            // Play Leave Sound
+            playSoundEffectDebounce();
+          });
+
           OTSession.on('streamCreated', (event) => {
             const layoutContainer = event.stream.videoType === 'screen' || event.stream.videoType === 'custom' ? 'screenContainer' : 'layoutContainer';
             const subscriber = OTSession.subscribe(event.stream, insertDefaultUI ? layoutContainer : null, {
@@ -535,9 +552,6 @@
             } else {
               otSpeech.notifySpeakerChange();
             }
-
-            // Play Join Sound
-            playSoundEffectDebounce();
           });
 
           OTSession.on('streamDestroyed', (event) => {
@@ -559,9 +573,6 @@
             }
 
             otSpeech.notifySpeakerChange();
-
-            // Play Leave Sound
-            playSoundEffectDebounce();
           });
 
           OTSession.on('sessionDisconnected', (event) => {
@@ -1014,6 +1025,11 @@
 
       function endCall() {
         window.location.href = "/thankyou.html";
+      }
+
+      function updateConnectionCount() {
+        console.log(`Connection Count: ${connectionCount}`);
+        document.getElementById('participant-count').innerText = `Number of Participants: ${connectionCount}`;
       }
 
       function updateSpeakerPins() {
