@@ -428,7 +428,13 @@
           const downloadButton = document.createElement('button');
           downloadButton.classList.add('Vlt-btn', 'Vlt-btn--tertiary', 'Vlt-btn--icon');
           downloadButton.innerHTML='<svg><use xlink:href="volta-icons.svg#Vlt-icon-download-full" /></svg>';
-          downloadButton.onclick = () => window.open(url, '__blank');
+          //downloadButton.onclick = () => window.open(url, '__blank');
+          downloadButton.onclick = () => {
+            const aElement = document.createElement('a');
+            aElement.href = url;
+            aElement.download = url.substr(url.lastIndexOf('/') + 1);
+            aElement.click();
+          };
           
           archiveElement.appendChild(downloadButton);
         }
