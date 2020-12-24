@@ -254,6 +254,9 @@
       let userRole = 'user';
       let connectionCount = 0;
 
+      let audioDeviceIndex = -1;
+      let videoDeviceIndex = -1;
+
       let streamControlHideTimeout = null;
       let hideControlDelay = 1000; // in milliseconds
 
@@ -793,7 +796,7 @@
             return;
           }
 
-          cameraPublisher = OT.initPublisher('layoutContainer', {
+          const options = {
             publishAudio: enableAudio,
             publishVideo: enableVideo,
             fitMode: 'contain',
@@ -802,7 +805,23 @@
             name,
             width: '100%',
             resolution: `${publisherResolution.width}x${publisherResolution.height}`,
-          }, (error) => {
+          };
+
+          if (videoDeviceIndex > -1) {
+            const videoDevice = await getVideoInput(videoDeviceIndex);
+            if (videoDevice != null) {
+              options.videoSource = videoDevice.deviceId;
+            }
+          }
+
+          if (audioDeviceIndex > -1) {
+            const audioDevice = await getAudioInput(audioDeviceIndex);
+            if (audioDevice != null) {
+              options.audioSource = audioDevice.deviceId;
+            }
+          }
+
+          cameraPublisher = OT.initPublisher('layoutContainer', options, (error) => {
             if (error) {
               handleError(error);
               return;
@@ -844,10 +863,107 @@
         }
       }
 
-      function cycleCamera() {
+      function listInputs() {
+        return new Promise((resolve, reject) => {
+          OT.getDevices((error, devices) => {
+            if (error) {
+              reject(error);
+            } else {
+              resolve(devices);
+            }
+          });
+        });
+      }
+
+      async function listVideoInputs() {
+        try {
+          const devices = await listInputs();
+          const filteredDevices = devices.filter(device => device.kind === 'videoInput');
+          return Promise.resolve(filteredDevices);
+        } catch (error) {
+          return Promise.reject(error);
+        }
+      }
+
+      async function listAudioInputs() {
+        try {
+          const devices = await listInputs();
+          const filteredDevices = devices.filter(device => device.kind === 'audioInput');
+          return Promise.resolve(filteredDevices);
+        } catch (error) {
+          return Promise.reject(error);
+        }
+      }
+
+      async function getVideoInput(index) {
+        try {
+          const devices = await listVideoInputs();
+          if (devices.length > index) {
+            return Promise.resolve(devices[index]);
+          }
+          
+          return Promise.resolve(null);
+        } catch (error) {
+          return Promise.reject(error);
+        }
+      }
+
+      async function getAudioInput(index) {
+        try {
+          const devices = await listAudioInputs();
+          if (devices.length > index) {
+            return Promise.resolve(devices[index]);
+          }
+          
+          return Promise.resolve(null);
+        } catch (error) {
+          return Promise.reject(error);
+        }
+      }
+
+      async function getNextVideoInputindex() {
+        try {
+          const devices = await listVideoInputs();
+          const newIndex = (videoDeviceIndex + 1) % devices.length;
+          return Promise.resolve(newIndex);
+        } catch (error) {
+          return Promise.reject(error);
+        }
+      }
+
+      async function getNextAudioInputIndex() {
+        try {
+          const devices = await listAudioInputs();
+          const newIndex = (audioDeviceIndex + 1) % devices.length;
+          return Promise.resolve(newIndex);
+        } catch (error) {
+          return Promise.reject(error);
+        }
+      }
+
+      async function cycleCameraManual() {
+        if (cameraPublisher == null) {
+          return;
+        }
+
+        const nextIndex = await getNextVideoInputindex();
+        if (nextIndex === videoDeviceIndex) {
+          // Not changed
+          return;
+        }
+
+        // Unpublish and Republish
+        startCamera();
+      }
+
+      async function cycleCameraAuto() {
         if (cameraPublisher != null) {
           cameraPublisher.cycleVideo();
         }
+      }
+
+      async function cycleCamera() {
+        return cycleCameraManual();
       }
 
       async function startScreen() {
