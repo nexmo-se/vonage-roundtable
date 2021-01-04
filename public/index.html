@@ -3,6 +3,9 @@
   <head>
     <title>Vonage Roundtable</title>
 
+    <meta name="google-signin-client_id" content="751973864515-6ree7fbo4foclmtsq65ljpr5qgb761fk.apps.googleusercontent.com">
+    <script src="https://apis.google.com/js/platform.js" async defer></script>
+
     <script src="https://static.opentok.com/v2/js/opentok.min.js"></script>
     <script src="lib/audioLevel/audioLevel.js"></script>
     <script src="lib/layout/layout.js"></script>
@@ -104,6 +107,7 @@
 
         <div id="session-control" style="margin-bottom: 16px;" hidden>
           <button id="connect" class="Vlt-btn Vlt-btn--primary" onclick="initializeSession()">Connect to Session</button>
+          <div id="google-connect" class="g-signin2" data-onsuccess="onSignIn"></div>
         </div>
 
         <div id="speaker-control" style="margin-bottom: 16px; width: 100%; display: none; flex-direction: column; flex: 1;" hidden>
@@ -248,6 +252,7 @@
       otSpeech.setOnActiveSpeakerChangeListener(onSpeakerOrderChanged);
       otSpeech.setOnMostActiveSpeakerChangeListener(onMostActiveSpeakerChanged);
 
+      let accessToken;
 
       let OTSession;
       let tokenParam = null;
@@ -345,7 +350,19 @@
         if (roomName != null && roomName !== '') {
           try {
             const url = `/token?room=${roomName}`;
-            const response = await fetch(url);
+            const config = {};
+            if (accessToken != null && accessToken !== '') {
+              config.headers = {
+                Authorization: `Bearer ${accessToken}`,
+              };
+            }
+            const response = await fetch(url, config);
+            if (response.status === 401) {
+              return Promise.reject(new Error('You are not authenticated, please refresh and login with the correct account'));
+            } else if (response.status === 403) {
+              return Promise.reject(new Error('Your email domain is not allowed, please refresh and login with the correct account'));
+            }
+
             const data = await response.json();
             roomSessionId = data.sessionId;
             
@@ -390,7 +407,13 @@
         // Default
         try {
           const url = `/token`;
-          const response = await fetch(url);
+          const config = {};
+          if (accessToken != null && accessToken !== '') {
+            config.headers = {
+              Authorization: `Bearer ${accessToken}`,
+            };
+          }
+          const response = await fetch(url, config);
           const data = await response.json();
           roomSessionId = data.sessionId;
           return Promise.resolve(data);
@@ -467,7 +490,13 @@
       async function refreshArchives() {
         try {
           const url = `/archives?sessionId=${roomSessionId}`;
-          const response = await fetch(url);
+          const config = {};
+          if (accessToken != null && accessToken !== '') {
+            config.headers = {
+              Authorization: `Bearer ${accessToken}`,
+            };
+          }
+          const response = await fetch(url, config);
           const archives = await response.json();
 
           refreshRecording(archives);
@@ -497,6 +526,7 @@
         try {
           // Disable button
           document.getElementById("connect").disabled = true;
+          document.getElementById("google-connect").disabled = true;
 
           // Check Display Name sanity
           const name = document.getElementById('name').value;
@@ -1263,15 +1293,21 @@
             sessionId: roomSessionId,
             action,
           };
+          const config = {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(body),
+          };
+          if (accessToken != null && accessToken !== '') {
+            config.headers['Authorization'] = `Bearer ${accessToken}`;
+          }
 
           // Disable Action
           document.getElementById('button-record').onclick = null;
 
-          const response = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body),
-          });
+          const response = await fetch(url, config);
 
           await refreshArchives();
         } catch (error) {
@@ -1362,7 +1398,13 @@
         try {
           const mute = muteCheckbox.checked;
           const url = `/muteAll?room=${roomName}&mute=${mute}`;
-          await fetch(url);
+          const config = {};
+          if (accessToken != null && accessToken !== '') {
+            config.headers = {
+              Authorization: `Bearer ${accessToken}`,
+            };
+          }
+          await fetch(url, config);
         } catch (error) {
           console.error(error);
         } finally {
@@ -1426,6 +1468,17 @@
         };
       }
 
+      function onSignIn(googleUser) {
+        const profile = googleUser.getBasicProfile();
+        document.getElementById('name').value = profile.getName();
+
+        const idToken = googleUser.getAuthResponse().id_token;
+        accessToken = idToken;
+        googleUser.disconnect();
+
+        initializeSession();
+      }
+
       if (window.location.href.toString().indexOf('http://') === 0 && window.location.href.toString().indexOf('http://localhost') !== 0) {
         window.location.href = window.location.href.toString().replace("http://", "https://");
       }
@@ -1462,6 +1515,10 @@
         otSpeech = OTSpeech({ numberOfActiveSpeakers });
         otSpeech.setOnActiveSpeakerChangeListener(onSpeakerOrderChanged);
         otSpeech.setOnMostActiveSpeakerChangeListener(onMostActiveSpeakerChanged);
+
+        if (room != null && room.charAt(0) === '_') {
+          document.getElementById('connect').disabled = true;
+        }
 
         if (name != null && name != '') {
           document.getElementById('name').value = name;

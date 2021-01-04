@@ -17,6 +17,8 @@ const apiKey = process.env.API_KEY;
 const apiSecret = process.env.API_SECRET;
 const sessionId = process.env.SESSION_ID;
 const sessionExpiryDelay = parseInt(process.env.SESSION_EXPIRY_DELAY || '90000', 10);
+const authEmailDomains = (process.env.AUTH_EMAIL_DOMAINS || '*').split(/,/g);
+const secretToken = process.env.SECRET_TOKEN;
 
 const client = new OpenTok(apiKey, apiSecret);
 
@@ -34,6 +36,76 @@ app.use(bodyParser.json({ limit: requestMaxSize }));
 
 app.use('/', express.static('public'));
 app.get('/success', (_, res) => res.send('You have successfully deployed the Vonage Roundtable Application'));
+
+const authenticate = async (req, res, next) => {
+  try {
+    const { headers } = req;
+    const authorizationHeader = headers['authorization'];
+  
+    const { room } = req.query;
+    if (room.charAt(0) !== '_') {
+      next();
+      return;
+    }
+  
+    console.log('Requires Authentication');
+  
+    if (authorizationHeader == null || authorizationHeader === '' || authorizationHeader.indexOf('Bearer ') !== 0) {
+      res.status(401).send('not authenticated');
+      return;
+    }
+  
+    const token = authorizationHeader.slice('Bearer '.length);
+
+    if (secretToken != null && secretToken != '' && token === secretToken) {
+      // Match Secret Token, authenticated
+      console.log('Matched Secret Token');
+      next();
+      return;
+    }
+
+    const validateResult = await validateGoogleIdToken(token);
+    const { email } = validateResult;
+
+    const atIndex = email.indexOf('@');
+    const emailDomain = email.slice(atIndex + 1);
+
+    // Must Fit Specific Domains
+    let emailDomainAllowed = false;
+    for (let i = 0; i < authEmailDomains.length; i += 1) {
+      const authEmailDomain = authEmailDomains[i];
+      if (authEmailDomain === '*') {
+        // Wildcard, all domains are allowed
+        emailDomainAllowed = true;
+        break;
+      } else if (authEmailDomain === emailDomain) {
+        // Matching email domain
+        emailDomainAllowed = true;
+        break;
+      }
+    }
+
+    if (!emailDomainAllowed) {
+      res.status(403).send('domain not allowed');
+      return;
+    }
+
+    next();
+  } catch (error) {
+    console.error(error);
+    next(error);
+  }
+}
+
+const validateGoogleIdToken = async (token) => {
+  try {
+    const url = `https://oauth2.googleapis.com/tokeninfo?id_token=${token}`;
+    const response = await axios.get(url);
+    return Promise.resolve(response.data);
+  } catch (error) {
+    return Promise.reject(error);
+  }
+}
 
 const sendMuteAllSignal = (sessionId) => new Promise((resolve, reject) => {
   client.signal(sessionId, null, { type: 'muteall', data: 'muteall' }, (error) => {
@@ -183,7 +255,7 @@ const createRoomSession = async (room, sessionId) => {
   }
 }
 
-app.get('/token', async (req, res, next) => {
+app.get('/token', authenticate, async (req, res, next) => {
   try {
     const { RoomSession } = DatabaseService.models;
     const { room } = req.query;
@@ -219,7 +291,7 @@ app.get('/token', async (req, res, next) => {
   }
 });
 
-app.get('/muteAll', async (req, res, next) => {
+app.get('/muteAll', authenticate, async (req, res, next) => {
   try {
     const { room, mute = 'true' } = req.query;
     const { sessionId } = await getRoomSession(room);
@@ -282,7 +354,18 @@ app.post('/archives', async (req, res, next) => {
   } catch (error) {
     next(error);
   }
-})
+});
+
+app.post('/gcallback', async (req, res) => {
+  console.log(req.query);
+  console.log(req.body);
+  res.send('ok');
+});
+
+app.get('/gcallback', async (req, res) => {
+  console.log(req.query);
+  res.send('ok');
+});
 
 // Create Application HTTP Server
 const httpServer = http.createServer(app);
