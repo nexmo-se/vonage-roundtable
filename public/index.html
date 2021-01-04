@@ -1517,6 +1517,7 @@
         otSpeech.setOnMostActiveSpeakerChangeListener(onMostActiveSpeakerChanged);
 
         if (room != null && room.charAt(0) === '_') {
+          document.getElementById('name').disabled = true;
           document.getElementById('connect').disabled = true;
         }
 
