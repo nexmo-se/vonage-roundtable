@@ -107,7 +107,10 @@
 
         <div id="session-control" style="margin-bottom: 16px;" hidden>
           <button id="connect" class="Vlt-btn Vlt-btn--primary" onclick="initializeSession()">Connect to Session</button>
-          <div id="google-connect" class="g-signin2" data-onsuccess="onSignIn"></div>
+        </div>
+        <div id="google-connect" style="width: 100%;">
+          <label for="name" class="Vlt-label">Sign In</label>
+          <div class="g-signin2" data-onsuccess="onSignIn"></div>
         </div>
 
         <div id="speaker-control" style="margin-bottom: 16px; width: 100%; display: none; flex-direction: column; flex: 1;" hidden>
@@ -733,6 +736,7 @@
             retryCount = retryLimit; // Reset Count
             
             console.log('Session Ready');
+            document.getElementById('google-connect').hidden = true;
             document.getElementById('session-control').hidden = true;
             document.getElementById('speaker-control').hidden = false;
             document.getElementById('speaker-control').style.display = 'flex';
@@ -1516,11 +1520,6 @@
         otSpeech.setOnActiveSpeakerChangeListener(onSpeakerOrderChanged);
         otSpeech.setOnMostActiveSpeakerChangeListener(onMostActiveSpeakerChanged);
 
-        if (room != null && room.charAt(0) === '_') {
-          document.getElementById('name').disabled = true;
-          document.getElementById('connect').disabled = true;
-        }
-
         if (name != null && name != '') {
           document.getElementById('name').value = name;
           document.getElementById('session-control').hidden = true;
@@ -1529,6 +1528,13 @@
         } else {
           document.getElementById('session-control').hidden = false;
           document.getElementById('name-control').hidden = false;
+        }
+
+        if (room != null && room.charAt(0) === '_') {
+          document.getElementById('name').disabled = true;
+          document.getElementById('connect').disabled = true;
+          document.getElementById('session-control').hidden = true;
+          document.getElementById('name-control').hidden = true;
         }
 
         if (userRole === 'admin') {
