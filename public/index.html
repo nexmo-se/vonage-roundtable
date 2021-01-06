@@ -34,6 +34,10 @@
       <div id="screenContainer" style="position: relative; display: flex; flex: 1; height: 100vh; background-color: black; overflow: hidden;"></div>
       <div id="layoutContainer" style="position: relative; display: flex; width: 100%; height: 100vh; background-color: black; flex-direction: row;"></div>
 
+      <div id="subtitleContainer" style="width: 100%; position: absolute; z-index: 8999; bottom: 15px; left: 0; right: 0; padding-left: 5; padding-right: 5px; ">
+        <div id="subtitleBubble" style="max-width: 100%; font-size: 18px; color: white; padding-left: 20; padding-right: 20px; padding-top: 8px; padding-bottom: 8px; background-color: #00000080;"></div>
+      </div>
+
       <div id="stream-control" style="width: 100%; position: absolute; z-index: 9999; bottom: 50px; left: 0; right: 0;" hidden>
         <div style="display: flex; flex-direction: row; justify-content: center; align-items: center;">
           <div class="Vlt-tooltip Vlt-tooltip--top" title="Record Meeting">
@@ -69,6 +73,12 @@
           <div class="Vlt-tooltip Vlt-tooltip--top" style="margin-left: 5px; margin-right: 5px;" title="Cycle Camera">
             <button id="button-cycle-camera" class="Vlt-btn Vlt-btn--large Vlt-btn--tertiary Vlt-btn--icon" onclick="cycleCamera()">
               <svg><use xlink:href="volta-icons.svg#Vlt-icon-camera-switch-full" /></svg>
+            </button>
+          </div>
+
+          <div class="Vlt-tooltip Vlt-tooltip--top" style="margin-left: 5px; margin-right: 5px;" title="Enable/Disable Transcription">
+            <button id="button-transcription-enable" class="Vlt-btn Vlt-btn--large Vlt-btn--tertiary Vlt-btn--icon" onclick="toggleTranscription()">
+              <svg><use xlink:href="volta-icons.svg#Vlt-icon-subtitles-full" /></svg>
             </button>
           </div>
           
@@ -274,16 +284,21 @@
       let retryCount = 0;
       let retryLimit = 0;
       let roomName = null;
+      let roomApiKey = null;
       let roomSessionId = null;
+      let roomToken = null;
       let userRole = 'user';
       let connectionCount = 0;
       let videoCycleMode = 'auto';
+      let enableTranscription = false;
 
       let audioDeviceIndex = 0;
       let videoDeviceIndex = 0;
 
       let streamControlHideTimeout = null;
       let hideControlDelay = 1000; // in milliseconds
+
+      let transcriptionStarted = false;
 
 
       // Debouncing logic for handling window resize layout adjustment
@@ -319,6 +334,20 @@
 
         // Set new timeout for actual sound effect
         soundEffectTimeout = setTimeout(() => playSoundEffect(), 500);
+      }
+
+      // Transcription Text
+      let clearTranscriptionTimeout = null;
+      function setTranscriptionText(text) {
+        // Clear timeout if exist
+        if (clearTranscriptionTimeout != null) {
+          clearTimeout(clearTranscriptionTimeout);
+        }
+
+        document.getElementById('subtitleBubble').innerText = text;
+        clearTranscriptionTimeout = setTimeout(() => {
+          document.getElementById('subtitleBubble').innerText = '';
+        }, 5000);
       }
       
       function waitForReady(callback) {
@@ -367,7 +396,9 @@
             }
 
             const data = await response.json();
+            roomApiKey = data.apiKey;
             roomSessionId = data.sessionId;
+            roomToken = data.token;
             
             // Update Mute
             document.getElementById('mute-all-checkbox').checked = data.muteOnJoin;
@@ -399,7 +430,9 @@
             data[key] = value;
           }
 
+          roomApiKey = data.partner_id,
           roomSessionId = data.session_id;
+          roomToken = tokenParam;
           return Promise.resolve({
             apiKey: data.partner_id,
             sessionId: data.session_id,
@@ -418,7 +451,9 @@
           }
           const response = await fetch(url, config);
           const data = await response.json();
+          roomApiKey = data.apiKey;
           roomSessionId = data.sessionId;
+          roomToken = data.token;
           return Promise.resolve(data);
         } catch (error) {
           console.log(error.message);
@@ -641,7 +676,9 @@
           OTSession.on('signal', (e) => {
             const { type, data } = e;
 
-            if (type === 'signal:muteall') {
+            if (type === 'signal:transcription') {
+              setTranscriptionText(data);
+            } else if (type === 'signal:muteall') {
               console.log('received mute all signal');
               enableAudio = false;
               cameraPublisher.publishAudio(enableAudio);
@@ -1483,6 +1520,75 @@
         initializeSession();
       }
 
+      async function toggleTranscription() {
+        document.getElementById('button-record').onclick = null;
+
+        transcriptionStarted = !transcriptionStarted;
+        if (transcriptionStarted) {
+          // Start Transcription
+          await startTranscription();
+
+        } else {
+          // Stop Transcription
+          await stopTranscription();
+
+        }
+
+        if (transcriptionStarted) {
+          document.getElementById('button-transcription-enable').classList.remove('Vlt-btn--tertiary');
+          document.getElementById('button-transcription-enable').classList.add('Vlt-btn--primary');
+        } else {
+          document.getElementById('button-transcription-enable').classList.add('Vlt-btn--tertiary');
+          document.getElementById('button-transcription-enable').classList.remove('Vlt-btn--primary');
+        }
+
+        document.getElementById('button-record').onclick = toggleTranscription;
+      }
+
+      async function startTranscription() {
+        try {
+          const url = `/transcribe`;
+          const body = {
+            sessionId: roomSessionId,
+          };
+          const config = {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(body),
+          };
+
+          const response = await fetch(url, config);
+
+          console.log('Transcription Started');
+        } catch (error) {
+          console.error(error);
+        }
+      }
+
+      async function stopTranscription() {
+        if (roomSessionId == null || roomSessionId === '') {
+          alert('No Session Detected');
+          return;
+        }
+        try {
+          const url = `/transcribe/${roomSessionId}`;
+          const config = {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          };
+
+          const response = await fetch(url, config);
+
+          console.log('Transcription Ended');
+        } catch (error) {
+          console.error(error);
+        }
+      }
+
       if (window.location.href.toString().indexOf('http://') === 0 && window.location.href.toString().indexOf('http://localhost') !== 0) {
         window.location.href = window.location.href.toString().replace("http://", "https://");
       }
@@ -1500,6 +1606,7 @@
           role = 'user',
           sound,
           cycleMode = 'manual',
+          sub,
         } = params;
 
         const numberOfActiveSpeakers = parseInt((max || '4'), 10);
@@ -1513,6 +1620,7 @@
         roomName = room;
         userRole = role;
         enableSoundEffect = (sound || 'true') === 'true';
+        enableTranscription = (sub || 'false') === 'true';
         videoCycleMode = cycleMode;
 
         ({ adjustLayout, updateHighlight, addSelfSpeakerId, removeSelfSpeakerId } = OTLayout(layoutContainer, screenContainer, { aspectRatio, highlight }));
@@ -1545,6 +1653,12 @@
           document.getElementById('button-record').style.display = null;
         } else {
           document.getElementById('button-record').style.display = 'none';
+        }
+
+        if (enableTranscription && userRole === 'admin') {
+          document.getElementById('button-transcription-enable').style.display = null;
+        } else {
+          document.getElementById('button-transcription-enable').style.display = 'none';
         }
 
         document.getElementById('enable-sound-checkbox').checked = enableSoundEffect;

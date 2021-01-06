@@ -19,6 +19,8 @@ const sessionId = process.env.SESSION_ID;
 const sessionExpiryDelay = parseInt(process.env.SESSION_EXPIRY_DELAY || '90000', 10);
 const authEmailDomains = (process.env.AUTH_EMAIL_DOMAINS || '*').split(/,/g);
 const secretToken = process.env.SECRET_TOKEN;
+const roundtableHost = process.env.ROUNDTABLE_HOST;
+const transcriptionHost = process.env.TRANSCRIPTION_HOST;
 
 const client = new OpenTok(apiKey, apiSecret);
 
@@ -109,6 +111,16 @@ const validateGoogleIdToken = async (token) => {
 
 const sendMuteAllSignal = (sessionId) => new Promise((resolve, reject) => {
   client.signal(sessionId, null, { type: 'muteall', data: 'muteall' }, (error) => {
+    if (error) {
+      reject(error);
+    } else {
+      resolve();
+    }
+  });
+});
+
+const sendTranscriptionSignal = (sessionId, transcription) => new Promise((resolve, reject) => {
+  client.signal(sessionId, null, { type: 'transcription', data: transcription }, (error) => {
     if (error) {
       reject(error);
     } else {
@@ -351,6 +363,64 @@ app.post('/archives', async (req, res, next) => {
     } else {
       res.status(400).send('unknown action');
     }
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post('/transcribe', async (req, res, next) => {
+  try {
+    // Check if transcription already existed
+    const checkUrl = `${transcriptionHost}/transcribe/${req.body.sessionId}`;
+    const checkResponse = await axios.get(checkUrl);
+    const { data: checkData } = checkResponse;
+    if (checkData.exist) {
+      console.log("Transcription already exist")
+      res.json(checkData);
+      return;
+    }
+
+    const url = `${transcriptionHost}/transcribe`;
+    const body = {
+      apiKey,
+      sessionId: req.body.sessionId,
+      token: client.generateToken(req.body.sessionId),
+      callbackUrl: `${roundtableHost}/transcribe/callback`,
+    }
+
+    const response = await axios.post(url, body);
+    const { data } = response;
+
+    res.json(data);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.delete('/transcribe/:sessionId', async (req, res, next) => {
+  try {
+    const { sessionId } = req.params;
+    const url = `${transcriptionHost}/transcribe/${sessionId}`;
+
+    const response = await axios.delete(url);
+    const { data } = response;
+    
+    res.json(data);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post('/transcribe/callback', async (req, res, next) => {
+  try {
+    const { sessionId, text } = req.body;
+
+    console.log(`Transcription: ${text}`);
+    
+    // Send Transcription Signal
+    await sendTranscriptionSignal(sessionId, text);
+
+    res.send('ok');
   } catch (error) {
     next(error);
   }
