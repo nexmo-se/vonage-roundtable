@@ -368,59 +368,9 @@ app.post('/archives', async (req, res, next) => {
   }
 });
 
-app.post('/transcribe', async (req, res, next) => {
+app.get('/transcribeHost', async (req, res, next) => {
   try {
-    // Check if transcription already existed
-    const checkUrl = `${transcriptionHost}/transcribe/${req.body.sessionId}`;
-    const checkResponse = await axios.get(checkUrl);
-    const { data: checkData } = checkResponse;
-    if (checkData.exist) {
-      console.log("Transcription already exist")
-      res.json(checkData);
-      return;
-    }
-
-    const url = `${transcriptionHost}/transcribe`;
-    const body = {
-      apiKey,
-      sessionId: req.body.sessionId,
-      token: client.generateToken(req.body.sessionId),
-      callbackUrl: `${roundtableHost}/transcribe/callback`,
-    }
-
-    const response = await axios.post(url, body);
-    const { data } = response;
-
-    res.json(data);
-  } catch (error) {
-    next(error);
-  }
-});
-
-app.delete('/transcribe/:sessionId', async (req, res, next) => {
-  try {
-    const { sessionId } = req.params;
-    const url = `${transcriptionHost}/transcribe/${sessionId}`;
-
-    const response = await axios.delete(url);
-    const { data } = response;
-    
-    res.json(data);
-  } catch (error) {
-    next(error);
-  }
-});
-
-app.post('/transcribe/callback', async (req, res, next) => {
-  try {
-    const { sessionId, text } = req.body;
-
-    console.log(`Transcription: ${text}`);
-    
-    // Send Transcription Signal
-    await sendTranscriptionSignal(sessionId, text);
-
-    res.send('ok');
+    res.json({ host: transcriptionHost });
   } catch (error) {
     next(error);
   }

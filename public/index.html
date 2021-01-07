@@ -6,6 +6,8 @@
     <meta name="google-signin-client_id" content="751973864515-6ree7fbo4foclmtsq65ljpr5qgb761fk.apps.googleusercontent.com">
     <script src="https://apis.google.com/js/platform.js" async defer></script>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.5/socket.io.js" integrity="sha512-2rUSTSAeOO02jF6eBqENNqPs1EohenJ5j+1dgDPdXSLz9nOlrr8DJk4zW/lDy8rjhGCSonW3Gx812XJQIKZKJQ==" crossorigin="anonymous"></script>
+
     <script src="https://static.opentok.com/v2/js/opentok.min.js"></script>
     <script src="lib/audioLevel/audioLevel.js"></script>
     <script src="lib/layout/layout.js"></script>
@@ -35,7 +37,7 @@
       <div id="layoutContainer" style="position: relative; display: flex; width: 100%; height: 100vh; background-color: black; flex-direction: row;"></div>
 
       <div id="subtitleContainer" style="width: 100%; position: absolute; z-index: 8999; bottom: 15px; left: 0; right: 0; padding-left: 5; padding-right: 5px; ">
-        <div id="subtitleBubble" style="max-width: 100%; font-size: 18px; color: white; padding-left: 20; padding-right: 20px; padding-top: 8px; padding-bottom: 8px; background-color: #00000080;"></div>
+        <div id="subtitleBubble" style="max-width: 100%; font-size: 18px; color: white; background-color: #00000080;"></div>
       </div>
 
       <div id="stream-control" style="width: 100%; position: absolute; z-index: 9999; bottom: 50px; left: 0; right: 0;" hidden>
@@ -299,6 +301,7 @@
       let hideControlDelay = 1000; // in milliseconds
 
       let transcriptionStarted = false;
+      let transcriptionSocket;
 
 
       // Debouncing logic for handling window resize layout adjustment
@@ -678,6 +681,15 @@
 
             if (type === 'signal:transcription') {
               setTranscriptionText(data);
+            } else if (type === 'signal:transcriptionStatus') {
+              transcriptionStarted = data === 'started';
+              if (transcriptionStarted) {
+                document.getElementById('button-transcription-enable').classList.remove('Vlt-btn--tertiary');
+                document.getElementById('button-transcription-enable').classList.add('Vlt-btn--primary');
+              } else {
+                document.getElementById('button-transcription-enable').classList.add('Vlt-btn--tertiary');
+                document.getElementById('button-transcription-enable').classList.remove('Vlt-btn--primary');
+              }
             } else if (type === 'signal:muteall') {
               console.log('received mute all signal');
               enableAudio = false;
@@ -798,6 +810,19 @@
               document.getElementById('button-video-enable').innerHTML = `<svg><use xlink:href="volta-icons.svg#Vlt-icon-video-off-full" /></svg>`;
             }
 
+            isTranscriptionRunning()
+              .then(result => transcriptionStarted = result)
+              .then(() => {
+                if (transcriptionStarted) {
+                  document.getElementById('button-transcription-enable').classList.remove('Vlt-btn--tertiary');
+                  document.getElementById('button-transcription-enable').classList.add('Vlt-btn--primary');
+                } else {
+                  document.getElementById('button-transcription-enable').classList.add('Vlt-btn--tertiary');
+                  document.getElementById('button-transcription-enable').classList.remove('Vlt-btn--primary');
+                }
+              })
+              .catch(error => console.error(error));
+
             // Set Stream Control Listener
             setStreamControlHoverListener();
 
@@ -806,6 +831,9 @@
 
             // Automatically start publishing camera
             startCamera();
+
+            // Join Transcription Room
+            joinTranscriptionRoom();
           });
         } catch (error) {
           if (retry && error.code == 1006 && (retryLimit === 0 || (retryLimit > 0 && retryCount > 0))) {
@@ -1546,11 +1574,18 @@
       }
 
       async function startTranscription() {
+        if (roomSessionId == null || roomSessionId === '') {
+          alert('No Session Detected');
+          return;
+        }
+
         try {
-          const url = `/transcribe`;
-          const body = {
-            sessionId: roomSessionId,
-          };
+          const transcribeHost = await getTranscriptionHost();
+          const credentials = await getCredentials();
+
+          
+          const url = `${transcribeHost}/transcribe`;
+          const body = credentials;
           const config = {
             method: 'POST',
             headers: {
@@ -1561,7 +1596,15 @@
 
           const response = await fetch(url, config);
 
-          console.log('Transcription Started');
+          // Signal Everyone
+          OTSession.signal({
+            type: 'transcriptionStatus',
+            data: 'started',
+          }, (error) => {
+            if (error) {
+              console.error(error);
+            }
+          });
         } catch (error) {
           console.error(error);
         }
@@ -1572,20 +1615,106 @@
           alert('No Session Detected');
           return;
         }
+
         try {
-          const url = `/transcribe/${roomSessionId}`;
+          const transcribeHost = await getTranscriptionHost();
+          const credentials = await getCredentials();
+
+          
+          const url = `${transcribeHost}/transcribe/${roomSessionId}`;
+          const body = credentials;
           const config = {
             method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(body),
+          };
+
+          const response = await fetch(url, config);
+
+          // Signal Everyone
+          OTSession.signal({
+            type: 'transcriptionStatus',
+            data: 'stopped',
+          }, (error) => {
+            if (error) {
+              console.error(error);
+            }
+          });
+
+        } catch (error) {
+          console.error(error);
+        }
+      }
+
+      async function getTranscriptionHost() {
+        try {
+          const url = '/transcribeHost';
+          const config = {
+            method: 'GET',
             headers: {
               'Content-Type': 'application/json',
             },
           };
 
           const response = await fetch(url, config);
-
-          console.log('Transcription Ended');
+          const data = await response.json();
+          const { host: transcribeHost } = data;
+          return Promise.resolve(transcribeHost);
         } catch (error) {
           console.error(error);
+          return Promise.reject(error);
+        }
+      }
+
+      async function isTranscriptionRunning() {
+        try {
+          if (roomSessionId == null || roomSessionId === '') {
+            alert('No Session Detected');
+            return Promise.resolve(false);
+          }
+
+          const transcribeHost = await getTranscriptionHost();
+          const url = `${transcribeHost}/transcribe/${roomSessionId}`;
+          const config = {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          };
+
+          const response = await fetch(url, config);
+          const data = await response.json();
+          return Promise.resolve(data.exist);
+        } catch (error) {
+          return Promise.reject(error);
+        }
+      }
+
+      async function joinTranscriptionRoom() {
+        try {
+          const transcribeHost = await getTranscriptionHost();
+          if (transcribeHost == null) {
+            return Promise.resolve(false);
+          }
+
+          // Join Socket IO
+          transcriptionSocket = io(transcribeHost);
+          transcriptionSocket.on('connect', () => {
+            console.log('Connected to Socket IO');
+
+            // Join Room
+            transcriptionSocket.emit('join', { room: roomSessionId });
+          });
+
+          transcriptionSocket.on('disconnect', () => {
+            console.log('Disconnected from Socket IO');
+          });
+
+          transcriptionSocket.on('transcription', text => setTranscriptionText(text));
+        } catch (error) {
+          return Promise.reject(error);
         }
       }
 
