@@ -1585,7 +1585,10 @@
 
           
           const url = `${transcribeHost}/transcribe`;
-          const body = credentials;
+          const body = {
+            ...credentials,
+            filterEnabled: true, // Enable Profanity Filter
+          };
           const config = {
             method: 'POST',
             headers: {
