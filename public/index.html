@@ -1038,6 +1038,7 @@
       async function listAudioOutputs() {
         try {
           const devices = await listOutputs();
+          console.log(devices);
           const filteredDevices = devices.filter(device => device.kind === 'audiooutput');
           return Promise.resolve(filteredDevices);
         } catch (error) {
@@ -1808,7 +1809,6 @@
               const device = devices[i];
               const deviceOption = document.createElement('option');
               deviceOption.innerText = device.label;
-              console.log(device);
               deviceOption.value = `audio-source-${i}`;
 
               audioSelect.appendChild(deviceOption);
@@ -1830,7 +1830,7 @@
             for (let i = 0; i < devices.length; i += 1) {
               const device = devices[i];
               const deviceOption = document.createElement('option');
-              deviceOption.innerText = 'Default Audio Output';
+              deviceOption.innerText = device.label;
               deviceOption.value = `audio-sink-${device.deviceId}`;
 
               audioSelect.appendChild(deviceOption);
@@ -1838,7 +1838,7 @@
 
             if (devices.length === 0) {
               const deviceOption = document.createElement('option');
-              deviceOption.innerText = device.label;
+              deviceOption.innerText = 'Default Audio Output';
               deviceOption.value = `audio-sink-vg-default`;
 
               audioSelect.appendChild(deviceOption);
