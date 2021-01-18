@@ -1479,6 +1479,10 @@
 
       function onVideoSourceChanged(event) {
         const value = event.target.value.replace('video-source-', '');
+        if (value === 'vg-default') {
+          return;
+        }
+
         const index = parseInt(value, 10);
         videoDeviceIndex = index;
 
@@ -1487,6 +1491,10 @@
 
       function onAudioSourceChanged(event) {
         const value = event.target.value.replace('audio-source-', '');
+        if (value === 'vg-default') {
+          return;
+        }
+
         const index = parseInt(value, 10);
         audioDeviceIndex = index;
 
@@ -1495,8 +1503,11 @@
 
       function onAudioSinkChanged(event) {
         const value = event.target.value.replace('audio-sink-', '');
-        console.log(`Change Audio Sink to ${value}`);
+        if (value === 'vg-default') {
+          return;
+        }
 
+        console.log(`Change Audio Sink to ${value}`);
         const elements = document.getElementsByTagName('video');
         for (let i = 0; i < elements.length; i += 1) {
           const element = elements[i];
@@ -1780,6 +1791,13 @@
               videoSelect.appendChild(deviceOption);
             }
 
+            if (devices.length === 0) {
+              const deviceOption = document.createElement('option');
+              deviceOption.innerText = 'Default Video Input';
+              deviceOption.value = `video-source-vg-default`;
+
+              audioSelect.appendChild(deviceOption);
+            }
           });
 
         listAudioInputs()
@@ -1790,7 +1808,16 @@
               const device = devices[i];
               const deviceOption = document.createElement('option');
               deviceOption.innerText = device.label;
+              console.log(device);
               deviceOption.value = `audio-source-${i}`;
+
+              audioSelect.appendChild(deviceOption);
+            }
+
+            if (devices.length === 0) {
+              const deviceOption = document.createElement('option');
+              deviceOption.innerText = 'Default Audio Input';
+              deviceOption.value = `audio-source-vg-default`;
 
               audioSelect.appendChild(deviceOption);
             }
@@ -1803,8 +1830,16 @@
             for (let i = 0; i < devices.length; i += 1) {
               const device = devices[i];
               const deviceOption = document.createElement('option');
-              deviceOption.innerText = device.label;
+              deviceOption.innerText = 'Default Audio Output';
               deviceOption.value = `audio-sink-${device.deviceId}`;
+
+              audioSelect.appendChild(deviceOption);
+            }
+
+            if (devices.length === 0) {
+              const deviceOption = document.createElement('option');
+              deviceOption.innerText = device.label;
+              deviceOption.value = `audio-sink-vg-default`;
 
               audioSelect.appendChild(deviceOption);
             }
