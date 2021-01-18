@@ -1889,7 +1889,7 @@
         document.getElementById('number-of-active-speakers-select').value = numberOfActiveSpeakers;
 
         refreshDeviceList();
-        MediaDevices.ondevicechange = () => {
+        navigator.mediaDevices.ondevicechange = () => {
           console.log('Media Devices change detected, refreshing list');
           refreshDeviceList();
         }
