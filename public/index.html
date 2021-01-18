@@ -207,7 +207,7 @@
                   </div>
 
                   <div class="Vlt-form__element">
-                    <label class="Vlt-label" for="number-of-active-speakers-select">Video Sources</label>
+                    <label class="Vlt-label" for="number-of-active-speakers-select">Video Input</label>
                     <div class="Vlt-select">
                       <select id="video-source-select" onchange="onVideoSourceChanged(event)">
                       </select>
@@ -215,9 +215,17 @@
                   </div>
 
                   <div class="Vlt-form__element">
-                    <label class="Vlt-label" for="number-of-active-speakers-select">Audio Sources</label>
+                    <label class="Vlt-label" for="number-of-active-speakers-select">Audio Input</label>
                     <div class="Vlt-select">
                       <select id="audio-source-select" onchange="onAudioSourceChanged(event)">
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="Vlt-form__element">
+                    <label class="Vlt-label" for="number-of-active-speakers-select">Audio Output</label>
+                    <div class="Vlt-select">
+                      <select id="audio-sink-select" onchange="onAudioSinkChanged(event)">
                       </select>
                     </div>
                   </div>
@@ -296,6 +304,7 @@
 
       let audioDeviceIndex = 0;
       let videoDeviceIndex = 0;
+      let audioSinkId = null;
 
       let streamControlHideTimeout = null;
       let hideControlDelay = 1000; // in milliseconds
@@ -857,6 +866,15 @@
 
         adjustLayout(mappedPositions, numberOfActiveSpeakers);
         updateSpeakerPins();
+
+        if (audioSinkId != null && audioSinkId !== '') {
+          console.log('Updating audio sink for all video elements');
+          const elements = document.getElementsByTagName('video');
+          for (let i = 0; i < elements.length; i += 1) {
+            const element = elements[i];
+            element.setSinkId(audioSinkId);
+          }
+        }
       }
 
       // This callback/listener will handle the most active speaker changed event
@@ -993,6 +1011,10 @@
         });
       }
 
+      function listOutputs() {
+        return navigator.mediaDevices.enumerateDevices();
+      }
+
       async function listVideoInputs() {
         try {
           const devices = await listInputs();
@@ -1007,6 +1029,16 @@
         try {
           const devices = await listInputs();
           const filteredDevices = devices.filter(device => device.kind === 'audioInput');
+          return Promise.resolve(filteredDevices);
+        } catch (error) {
+          return Promise.reject(error);
+        }
+      }
+
+      async function listAudioOutputs() {
+        try {
+          const devices = await listOutputs();
+          const filteredDevices = devices.filter(device => device.kind === 'audiooutput');
           return Promise.resolve(filteredDevices);
         } catch (error) {
           return Promise.reject(error);
@@ -1461,6 +1493,19 @@
         startCamera();
       }
 
+      function onAudioSinkChanged(event) {
+        const value = event.target.value.replace('audio-sink-', '');
+        console.log(`Change Audio Sink to ${value}`);
+
+        const elements = document.getElementsByTagName('video');
+        for (let i = 0; i < elements.length; i += 1) {
+          const element = elements[i];
+          element.setSinkId(value);
+        }
+
+        audioSinkId = value;
+      }
+
       async function muteAll() {
         const muteCheckbox = document.getElementById('mute-all-checkbox');
         muteCheckbox.disabled = true;
@@ -1824,7 +1869,20 @@
               audioSelect.appendChild(deviceOption);
             }
           });
-      })
+
+        listAudioOutputs()
+          .then(devices => {
+            const audioSelect = document.getElementById('audio-sink-select');
+            for (let i = 0; i < devices.length; i += 1) {
+              const device = devices[i];
+              const deviceOption = document.createElement('option');
+              deviceOption.innerText = device.label;
+              deviceOption.value = `audio-sink-${device.deviceId}`;
+
+              audioSelect.appendChild(deviceOption);
+            }
+          });
+      });
     </script>
     
     <script src="volta.min.js"></script>
