@@ -1786,7 +1786,7 @@
             for (let i = 0; i < devices.length; i += 1) {
               const device = devices[i];
               const deviceOption = document.createElement('option');
-              deviceOption.innerText = device.label;
+              deviceOption.innerText = device.label || `Video Input ${i+1}`;
               deviceOption.value = `video-source-${i}`;
 
               videoSelect.appendChild(deviceOption);
@@ -1808,7 +1808,7 @@
             for (let i = 0; i < devices.length; i += 1) {
               const device = devices[i];
               const deviceOption = document.createElement('option');
-              deviceOption.innerText = device.label;
+              deviceOption.innerText = device.label || `Audio Input ${i+1}`;
               deviceOption.value = `audio-source-${i}`;
 
               audioSelect.appendChild(deviceOption);
@@ -1830,7 +1830,7 @@
             for (let i = 0; i < devices.length; i += 1) {
               const device = devices[i];
               const deviceOption = document.createElement('option');
-              deviceOption.innerText = device.label;
+              deviceOption.innerText = device.label || `Audio Output ${i+1}`;
               deviceOption.value = `audio-sink-${device.deviceId}`;
 
               audioSelect.appendChild(deviceOption);
