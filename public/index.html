@@ -1766,6 +1766,51 @@
         }
       }
 
+      function refreshDeviceList() {
+        listVideoInputs()
+          .then(devices => {
+            const videoSelect = document.getElementById('video-source-select');
+            videoSelect.innerHTML = '';
+            for (let i = 0; i < devices.length; i += 1) {
+              const device = devices[i];
+              const deviceOption = document.createElement('option');
+              deviceOption.innerText = device.label;
+              deviceOption.value = `video-source-${i}`;
+
+              videoSelect.appendChild(deviceOption);
+            }
+
+          });
+
+        listAudioInputs()
+          .then(devices => {
+            const audioSelect = document.getElementById('audio-source-select');
+            audioSelect.innerHTML = '';
+            for (let i = 0; i < devices.length; i += 1) {
+              const device = devices[i];
+              const deviceOption = document.createElement('option');
+              deviceOption.innerText = device.label;
+              deviceOption.value = `audio-source-${i}`;
+
+              audioSelect.appendChild(deviceOption);
+            }
+          });
+
+        listAudioOutputs()
+          .then(devices => {
+            const audioSelect = document.getElementById('audio-sink-select');
+            audioSelect.innerHTML = '';
+            for (let i = 0; i < devices.length; i += 1) {
+              const device = devices[i];
+              const deviceOption = document.createElement('option');
+              deviceOption.innerText = device.label;
+              deviceOption.value = `audio-sink-${device.deviceId}`;
+
+              audioSelect.appendChild(deviceOption);
+            }
+          });
+      }
+
       if (window.location.href.toString().indexOf('http://') === 0 && window.location.href.toString().indexOf('http://localhost') !== 0) {
         window.location.href = window.location.href.toString().replace("http://", "https://");
       }
@@ -1843,45 +1888,11 @@
         document.title = roomName || 'Vonage Roundtable'
         document.getElementById('number-of-active-speakers-select').value = numberOfActiveSpeakers;
 
-        listVideoInputs()
-          .then(devices => {
-            const videoSelect = document.getElementById('video-source-select');
-            for (let i = 0; i < devices.length; i += 1) {
-              const device = devices[i];
-              const deviceOption = document.createElement('option');
-              deviceOption.innerText = device.label;
-              deviceOption.value = `video-source-${i}`;
-
-              videoSelect.appendChild(deviceOption);
-            }
-
-          });
-
-        listAudioInputs()
-          .then(devices => {
-            const audioSelect = document.getElementById('audio-source-select');
-            for (let i = 0; i < devices.length; i += 1) {
-              const device = devices[i];
-              const deviceOption = document.createElement('option');
-              deviceOption.innerText = device.label;
-              deviceOption.value = `audio-source-${i}`;
-
-              audioSelect.appendChild(deviceOption);
-            }
-          });
-
-        listAudioOutputs()
-          .then(devices => {
-            const audioSelect = document.getElementById('audio-sink-select');
-            for (let i = 0; i < devices.length; i += 1) {
-              const device = devices[i];
-              const deviceOption = document.createElement('option');
-              deviceOption.innerText = device.label;
-              deviceOption.value = `audio-sink-${device.deviceId}`;
-
-              audioSelect.appendChild(deviceOption);
-            }
-          });
+        refreshDeviceList();
+        MediaDevices.ondevicechange = () => {
+          console.log('Media Devices change detected, refreshing list');
+          refreshDeviceList();
+        }
       });
     </script>
     
