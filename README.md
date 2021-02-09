@@ -5,11 +5,11 @@ Roundtable sample application with automatic subscribe/unsubscribe video when th
 This allows for reduced bandwidth consumption for videos on participants who are keeping silence. Audio will continue to be published and subscribed unless the participant decided to mute himself/herself.
 
 ### Setup (Local)
-1. clone this repo
-2. run `npm install`
-3. install database (mysql/postgres)
-4. setup `.env` according to `.env.example`
-5. run `npm start`
+1. clone this repo.
+2. run `npm install`.
+3. install database (mysql/postgres).
+4. setup `.env` according to `.env.example`.
+5. run `npm start`.
 
 ### Setup (Heroku)
 [![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/nexmo-se/vonage-roundtable)
