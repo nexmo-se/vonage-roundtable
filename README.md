@@ -1,4 +1,6 @@
 # Vonage Roundtable for Multiparty Conference
+![Main](https://github.com/nexmo-se/vonage-roundtable/blob/master/images/main.png?raw=true)
+
 Roundtable sample application with automatic subscribe/unsubscribe video when the participant becomes one of the top active speakers.
 This allows for reduced bandwidth consumption for videos on participants who are keeping silence. Audio will continue to be published and subscribed unless the participant decided to mute himself/herself.
 
@@ -27,11 +29,13 @@ Private rooms are rooms with room names that starts with and underscore (`_`). A
 Public rooms are rooms that can be joined by anyone. Signing in using Name or Google are available.
 
 ### Sign In
+![Sign In](https://github.com/nexmo-se/vonage-roundtable/blob/master/images/signin.png?raw=true)
+
 There are 2 ways to sign in:
 - Sign In with Google (public and private room)
 - Sign In with Name (public room only)
 
-Note that private rooms only allows signing in from a Vonage email. Allowed email domains can be configured in the environment variable `AUTH_EMAIL_DOMAINS`.
+*Note that private rooms only allows signing in from a Vonage email. Allowed email domains can be configured in the environment variable `AUTH_EMAIL_DOMAINS`.*
 
 ### Roles
 There are 2 modes within the application:
@@ -50,10 +54,18 @@ User has the following basic privileges:
 - Screenshare
 - Video Player (loads and play video, visible to all participants)
 
+![Control](https://github.com/nexmo-se/vonage-roundtable/blob/master/images/control.png?raw=true)
+
+![Chat](https://github.com/nexmo-se/vonage-roundtable/blob/master/images/chat.png?raw=true)
+
+![Settings](https://github.com/nexmo-se/vonage-roundtable/blob/master/images/settings.png?raw=true)
+
 Admin has all the privileges of a normal User, as well as additional permissions, such as:
 - Mute All (muting all current participants and setting initial state of new participants to be muted)
 - Recording (start, stop, list and download recordings for the room)
 - Subtitle - OPTIONAL (start, stop subtitle transcription service, only available with sub=true option)
+
+![Admin](https://github.com/nexmo-se/vonage-roundtable/blob/master/images/admin.png?raw=true)
 
 ### Query
 A room meeting URL can be added with queries to achieve additional configurations.
