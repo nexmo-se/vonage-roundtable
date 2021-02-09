@@ -56,7 +56,7 @@ User has the following basic privileges:
 
 ![Control](https://github.com/nexmo-se/vonage-roundtable/blob/master/images/control.png?raw=true)
 
-![Chat](https://github.com/nexmo-se/vonage-roundtable/blob/master/images/chat.png?raw=true)
+![Chat](https://github.com/nexmo-se/vonage-roundtable/blob/master/images/chat2.png?raw=true)
 
 ![Settings](https://github.com/nexmo-se/vonage-roundtable/blob/master/images/settings.png?raw=true)
 
