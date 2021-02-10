@@ -9,6 +9,9 @@ const connectionString = process.env.DATABASE_URL;
 const connectionStringParser = new ConnectionStringParser({ scheme: 'postgres' });
 const connectionObject = connectionStringParser.parse(connectionString);
 
+console.log(connectionStringParser);
+console.log(connectionObject);
+
 // Template
 const name = connectionObject.endpoint;
 const username = connectionObject.username;
