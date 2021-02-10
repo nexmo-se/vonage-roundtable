@@ -5,3 +5,4 @@ logs/
 build/
 
 .env
+.env.heroku
