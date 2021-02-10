@@ -299,6 +299,7 @@ app.get('/token', authenticate, async (req, res, next) => {
       muteOnJoin,
     });
   } catch (error) {
+    console.log(error);
     next(error);
   }
 });
@@ -323,6 +324,7 @@ app.get('/muteAll', authenticate, async (req, res, next) => {
     }
     res.send('ok');
   } catch (error) {
+    console.log(error);
     next(error);
   }
 });
@@ -336,6 +338,7 @@ app.get('/archives/:archiveId/download', async (req, res, next) => {
     console.log(`Archive to Download: ${archiveId}`);
     libRequest.get(url).pipe(res);
   } catch (error) {
+    console.log(error);
     next(error);
   }
 });
@@ -347,6 +350,7 @@ app.get('/archives', async (req, res, next) => {
     
     res.json(archives);
   } catch (error) {
+    console.log(error);
     next(error);
   }
 });
@@ -364,6 +368,7 @@ app.post('/archives', async (req, res, next) => {
       res.status(400).send('unknown action');
     }
   } catch (error) {
+    console.log(error);
     next(error);
   }
 });
@@ -372,6 +377,7 @@ app.get('/transcribeHost', async (req, res, next) => {
   try {
     res.json({ host: transcriptionHost });
   } catch (error) {
+    console.log(error);
     next(error);
   }
 });
