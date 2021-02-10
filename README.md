@@ -6,11 +6,12 @@ This allows for reduced bandwidth consumption for videos on participants who are
 
 ### Setup (Local)
 1. clone this repo.
-2. run `npm install`.
-3. install database (mysql/postgres).
-4. setup `.env` according to `.env.example`.
-5. run `npm run migrate`.
-6. run `npm start`.
+2. ensure you are using nodejs v12.x as it does NOT work on nodejs v14.x.
+3. run `npm install`.
+4. install database (mysql/postgres).
+5. setup `.env` according to `.env.example`.
+6. run `npm run migrate`.
+7. run `npm start`.
 
 ### Setup (Heroku)
 [![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/nexmo-se/vonage-roundtable)
