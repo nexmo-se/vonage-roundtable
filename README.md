@@ -9,7 +9,8 @@ This allows for reduced bandwidth consumption for videos on participants who are
 2. run `npm install`.
 3. install database (mysql/postgres).
 4. setup `.env` according to `.env.example`.
-5. run `npm start`.
+5. run `npm run migrate`.
+6. run `npm start`.
 
 ### Setup (Heroku)
 [![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/nexmo-se/vonage-roundtable)

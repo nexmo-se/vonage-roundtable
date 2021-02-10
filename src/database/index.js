@@ -47,7 +47,7 @@ const config = {
   logging: true,
 }
 
-// console.log(config);
+console.log(config);
 
 const sequelizeClient = new Sequelize(name, username, password, config);
 // console.log(sequelizeClient);
