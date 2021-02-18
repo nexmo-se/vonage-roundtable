@@ -1925,11 +1925,11 @@
           document.getElementById('button-transcription-enable').style.display = 'none';
         }
 
-        if (shouldHideSideBar) {
-          toggleSidebar();
-        }
         if (shouldDisableSideBar) {
           document.getElementById('sidebar-control').style.display = 'none';
+          toggleSidebar();
+        } else if (shouldHideSideBar) {
+          toggleSidebar();
         }
 
         document.getElementById('enable-sound-checkbox').checked = enableSoundEffect;
