@@ -1866,6 +1866,7 @@
           sound,
           cycleMode = 'manual',
           sub,
+          hide_sidebar = 'false',
         } = params;
 
         const numberOfActiveSpeakers = parseInt((max || '4'), 10);
@@ -1881,6 +1882,8 @@
         enableSoundEffect = (sound || 'true') === 'true';
         enableTranscription = (sub || 'false') === 'true';
         videoCycleMode = cycleMode;
+        
+        const shouldHideSideBar = (hide_sidebar || 'false') === 'true';
 
         ({ adjustLayout, updateHighlight, addSelfSpeakerId, removeSelfSpeakerId } = OTLayout(layoutContainer, screenContainer, { aspectRatio, highlight }));
         otSpeech = OTSpeech({ numberOfActiveSpeakers });
@@ -1918,6 +1921,10 @@
           document.getElementById('button-transcription-enable').style.display = null;
         } else {
           document.getElementById('button-transcription-enable').style.display = 'none';
+        }
+
+        if (shouldHideSideBar) {
+          toggleSidebar();
         }
 
         document.getElementById('enable-sound-checkbox').checked = enableSoundEffect;
