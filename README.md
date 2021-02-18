@@ -86,6 +86,8 @@ The following is a list of available queries:
 - sound: BOOLEAN (`true` or `false`) - enable sound effect when participants join or leave the room. Default to `true`.
 - cycleMode: STRING (`auto`, `manual`) - Video Cycle Mode when clicking the cycle camera button. Default to `manual`.
 - sub: BOOLEAN (`true` or `false`) - Whether to enable the subtitle function, showing the subtitle button.
+- hide_sidebar: BOOLEAN (`true` or `false`) - Whether to hide the sidebar on load. Default to `false`.
+- disable_sidebar: BOOLEAN (`true` or `false`) - Whether to disable sidebar entirely. Default to `false`.
 
 ### Cycle Mode
 When the user clicks on the cycle camera button, there are different ways that the camera can be cycled. With the use of the default video source, opentok may change the underlying camera source without republishing using the `auto` option. However, if the user changes the video source in the settings tab, a `manual` approach will be used. The following shows how the `manual` approach works.
