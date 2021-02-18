@@ -31,7 +31,7 @@ const requestMaxSize = '150mb';
 const app = express();
 
 app.set('trust proxy', true);
-app.use(helmet());
+// app.use(helmet());
 app.use(cors());
 app.use(bodyParser.urlencoded({ extended: true, limit: requestMaxSize }));
 app.use(bodyParser.json({ limit: requestMaxSize }));
