@@ -47,7 +47,18 @@
     </div>
 
     <script>
-      window.postMessage('roundtable://call_end','*');
+      function waitForReady(callback) {
+        /in/.test(document.readyState) ? setTimeout('waitForReady('+callback+')', 9) : callback();
+      };
+
+      waitForReady(() => {
+        console.log('Ready');
+        if (window.parent != null) {
+          window.parent.postMessage('roundtable://call_end','*');
+        } else {
+          window.postMessage('roundtable://call_end','*');
+        }
+      });
     </script>
   </body>
 </html>
