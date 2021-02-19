@@ -18,6 +18,7 @@
         -moz-box-sizing: border-box;
         -webkit-box-sizing: border-box;
         margin: 0;
+        touch-action: none;
       }
 
       #layoutContainer::-webkit-scrollbar {
@@ -32,10 +33,10 @@
     <link rel="stylesheet" href="volta.min.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
   </head>
-  <body style="display: flex; flex-direction: row; width: 100%; height: 100vh; max-width: 100%;">
-    <div id="videoContainer" style="position: relative; display: flex; flex: 1; height: 100vh; flex-direction: row; background-color: black;">
-      <div id="screenContainer" style="position: relative; display: flex; flex: 1; height: 100vh; background-color: black; overflow: hidden;"></div>
-      <div id="layoutContainer" style="position: relative; display: flex; width: 100%; height: 100vh; background-color: black; flex-direction: row;"></div>
+  <body style="display: flex; flex-direction: row; width: 100%; height: -webkit-fill-available; max-width: 100%;">
+    <div id="videoContainer" style="position: relative; display: flex; flex: 1; height: -webkit-fill-available; flex-direction: row; background-color: black;">
+      <div id="screenContainer" style="position: relative; display: flex; flex: 1; height: -webkit-fill-available; background-color: black; overflow: hidden;"></div>
+      <div id="layoutContainer" style="position: relative; display: flex; width: 100%; height: -webkit-fill-available; background-color: black; flex-direction: row;"></div>
 
       <div id="subtitleContainer" style="width: 100%; position: absolute; z-index: 8999; bottom: 15px; left: 0; right: 0; padding-left: 5; padding-right: 5px; ">
         <div id="subtitleBubble" style="max-width: 100%; font-size: 18px; color: white; background-color: #00000080;"></div>
@@ -621,7 +622,7 @@
               insertDefaultUI,
               nameDisplayMode : 'on',
               width: event.stream.videoType === 'screen' ? '100%' : 640,
-              height: event.stream.videoType === 'screen' ? '100vh' : 480,
+              height: event.stream.videoType === 'screen' ? '-webkit-fill-available' : 480,
               preferredResolution: subscriberResolution,
             }, (error) => {
               if (error) {
@@ -1141,7 +1142,7 @@
             resolution: '1280x720',
             showControls: false,
             width: '100%',
-            height: '100vh',
+            height: '-webkit-fill-available',
             style: { nameDisplayMode: "off" }
           }, (error) => {
             if (error) {
@@ -1578,7 +1579,7 @@
         const videoContainer = document.getElementById('videoContainer');
         const streamControlContainer = document.getElementById('stream-control');
 
-        videoContainer.onmouseenter = (e) => {
+        const handleMouseEnter = (e) => {
           if (streamControlHideTimeout != null) {
             clearTimeout(streamControlHideTimeout);
           }
@@ -1586,7 +1587,8 @@
           streamControlContainer.hidden = false;
         };
 
-        videoContainer.onmouseleave = (e) => {
+        const handleMouseLeave = (e) => {
+          console.log('mouse leave');
           if (streamControlHideTimeout != null) {
             clearTimeout(streamControlHideTimeout);
           }
@@ -1595,6 +1597,11 @@
             streamControlContainer.hidden = true;
           }, hideControlDelay)
         };
+
+        videoContainer.ontouchstart = handleMouseEnter;
+        videoContainer.onmouseenter = handleMouseEnter;
+        videoContainer.ontouchend = handleMouseLeave;
+        videoContainer.onmouseleave = handleMouseLeave;
       }
 
       function onSignIn(googleUser) {
@@ -1937,6 +1944,9 @@
 
         document.title = roomName || 'Vonage Roundtable'
         document.getElementById('number-of-active-speakers-select').value = numberOfActiveSpeakers;
+
+        // document.addEventListener('touchstart', e => e.preventDefault());
+        // document.addEventListener('touchmove', e => e.preventDefault());
 
         refreshDeviceList();
         navigator.mediaDevices.ondevicechange = () => {
