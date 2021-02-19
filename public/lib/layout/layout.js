@@ -52,14 +52,27 @@ OTLayout = (layoutContainer, screenContainer, options) => {
   const getFixedLayoutDimension = (numberOfStreams) => fixedLayoutDimensions[numberOfStreams];
 
   const getDynamicLayoutDimensions = (numberOfStreams, isScreen = false) => {
+    const w = window.outerWidth;
+    const h = window.outerHeight;
+    const isPortrait = h > w;
+
     const hasScreens = screenContainerElement.childNodes.length > 0;
     if (hasScreens && !isScreen) {
-      const width = 200;
-      const height = width / config.aspectRatio;
-      return {
-        width,
-        height,
-      };
+      if (isPortrait) {
+        const height = 100;
+        const width = height * config.aspectRatio;
+        return {
+          width,
+          height,
+        };
+      } else {
+        const width = 200;
+        const height = width / config.aspectRatio;
+        return {
+          width,
+          height,
+        };
+      }
     }
 
     const containerElement = isScreen ? screenContainerElement : layoutContainerElement;
@@ -141,14 +154,49 @@ OTLayout = (layoutContainer, screenContainer, options) => {
   }
 
   const adjustLayout = (positions, numberOfActiveSpeakers = 2) => {
-    // Set width of containers
+    const w = window.outerWidth;
+    const h = window.outerHeight;
+    const isPortrait = h > w;
+    // console.log(`${w} x ${h} [${isPortrait ? 'Portrait' : 'Landscape'}]`);
+
+
+    const parentElement = layoutContainerElement.parentNode;
     const numberOfScreens = screenContainerElement.childNodes.length;
     const hasScreens = numberOfScreens > 0;
-    screenContainerElement.style.display = hasScreens ? 'flex' : 'none';
-    layoutContainerElement.style.width = hasScreens ? '200px' : '100%';
-    layoutContainerElement.style['flex-direction'] = hasScreens ? 'column' : 'row';
-    layoutContainerElement.style['flex-wrap'] = hasScreens ? null : 'wrap';
-    layoutContainerElement.style['overflow-y'] = hasScreens ? 'scroll' : null;
+
+    if (isPortrait) {
+      // Set Parent container
+      parentElement.style['flex-direction'] = 'column';
+      parentElement.style.width = '100%';
+      parentElement.style.height = null;
+
+      // Set width of containers
+      screenContainerElement.style.display = hasScreens ? 'flex' : 'none';
+      screenContainerElement.style.width = '100%';
+      screenContainerElement.style.height = null;
+
+      layoutContainerElement.style.height = hasScreens ? '200px' : '100%';
+      layoutContainerElement.style.width = '100%';
+      layoutContainerElement.style['flex-direction'] = 'row';
+      layoutContainerElement.style['flex-wrap'] = hasScreens ? null : 'wrap';
+      layoutContainerElement.style['overflow-x'] = hasScreens ? 'scroll' : null;
+    } else {
+      // Set Parent container
+      parentElement.style['flex-direction'] = 'row';
+      parentElement.style.width = null;
+      parentElement.style.height = '-webkit-fill-available';
+
+      // Set width of containers
+      screenContainerElement.style.display = hasScreens ? 'flex' : 'none';
+      screenContainerElement.style.width = null;
+      screenContainerElement.style.height = '-webkit-fill-available';
+
+      layoutContainerElement.style.width = hasScreens ? '200px' : '100%';
+      layoutContainerElement.style.height = '-webkit-fill-available';
+      layoutContainerElement.style['flex-direction'] = hasScreens ? 'column' : 'row';
+      layoutContainerElement.style['flex-wrap'] = hasScreens ? null : 'wrap';
+      layoutContainerElement.style['overflow-y'] = hasScreens ? 'scroll' : null;
+    }
 
     // Update Screen Dimensions
     const screenDimension = getDynamicLayoutDimensions(numberOfScreens, true);
@@ -159,7 +207,6 @@ OTLayout = (layoutContainer, screenContainer, options) => {
       screenNodes[i].style.height = `${screenDimension.height}px`;
       
     }
-
 
     // Hide All
     const children = [];
