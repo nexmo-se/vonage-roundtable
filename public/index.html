@@ -94,16 +94,17 @@
       </div>
 
       <div id="sidebar-control" style="position: absolute; right: 20px; top: 20px;">
-        <button id="button-collapse-sidebar" class="Vlt-btn Vlt-btn--large Vlt-btn--white Vlt-btn--icon" style="display: block;" onclick="toggleSidebar()">
-          <svg><use xlink:href="volta-icons.svg#Vlt-icon-expand" /></svg>
-        </button>
-        <button id="button-expand-sidebar" class="Vlt-btn Vlt-btn--large Vlt-btn--white Vlt-btn--icon" style="display: none;" onclick="toggleSidebar()">
+        <button id="button-expand-sidebar" class="Vlt-btn Vlt-btn--app Vlt-btn--white Vlt-btn--icon" style="display: none;" onclick="toggleSidebar()">
           <svg><use xlink:href="volta-icons.svg#Vlt-icon-collapse" /></svg>
         </button>
       </div>
     </div>
 
     <div id="sidebar" style="display: flex; flex-direction: column; width: 450px; height: 100%; padding: 16px; background-color: #e6e6e6;">
+      <button id="button-collapse-sidebar" class="Vlt-btn Vlt-btn--app Vlt-btn--white Vlt-btn--icon" style="display: block; margin-top: 4px; width: 40px; height: 40px;" onclick="toggleSidebar()">
+        <svg><use xlink:href="volta-icons.svg#Vlt-icon-expand" /></svg>
+      </button>
+
       <div class="Vlt-sidenav__block Vlt-sidenav__block--logo">
         <img class="Vlt-sidenav__elem--full" src="vonage-logo.svg"/>
       </div>
