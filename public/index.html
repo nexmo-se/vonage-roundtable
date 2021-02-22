@@ -9,6 +9,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.5/socket.io.js" integrity="sha512-2rUSTSAeOO02jF6eBqENNqPs1EohenJ5j+1dgDPdXSLz9nOlrr8DJk4zW/lDy8rjhGCSonW3Gx812XJQIKZKJQ==" crossorigin="anonymous"></script>
 
     <script src="https://static.opentok.com/v2/js/opentok.min.js"></script>
+    <script src="opentok-annotation.js"></script>
     <script src="lib/audioLevel/audioLevel.js"></script>
     <script src="lib/layout/layout.js"></script>
 
@@ -576,6 +577,52 @@
         // return text.replace(urlRegex, '<a href="$1">$1</a>')
       }
 
+      const IMAGE_ASSETS = 'annotation';
+      function getAnnotation(aDomElement, aOptions) {
+        aOptions = aOptions || {};
+        const options = {
+          session: aOptions.session || OTSession,
+          watchForResize: aOptions.watchForResize || window,
+          canvasContainer: aDomElement,
+          imageAssets: IMAGE_ASSETS
+        };
+        return new AnnotationAccPack(options);
+      }
+
+      function resizeAnnotationCanvas () {
+        annotation && annotation.resizeCanvas();
+      }
+
+      function startAnnotation(aAccPack) {
+        if (!aAccPack) {
+          return Promise.resolve();
+        }
+        annotation = aAccPack;
+        Utils.addEventsHandlers('roomView:', {
+          screenChange: resizeAnnotationCanvas
+        });
+        return aAccPack.start(_session, {
+          imageAssets: IMAGE_ASSETS,
+          backgroundColor: TOOLBAR_BG_COLOR
+        });
+      }
+
+      function endAnnotation(aElement) {
+        const annPack =  aElement && aElement._ANNOTATION_PACK || aElement;
+        annPack && annPack.end && annPack.end();
+        annotation = null;
+      }
+
+      function setupAnnotation(aAccPack, aPubSub, aParentElement) {
+        if (!aAccPack) {
+          return;
+        }
+        const container = document.getElementById(aPubSub.id);
+        const canvasOptions = { absoluteParent: aParentElement };
+        aAccPack.linkCanvas(aPubSub, container, canvasOptions);
+        aPubSub._ANNOTATION_PACK = aAccPack;
+      }
+
       async function initializeSession() {
         try {
           // Disable button
@@ -629,11 +676,22 @@
                 return handleError(error);
               }
 
+              // Start Annotation if Screenshare
+              const subsAnnotation = (event.stream.videoType === 'screen' && getAnnotation(layoutContainer)) || null;
+              startAnnotation(subsAnnotation)
+                .then(() => setupAnnotation(subsAnnotation, subscriber, document.querySelector('.opentok-stream-container')))
+                .catch(error => console.error(error));
+
               // Add Subscriber to OT Speech
               if (event.stream.videoType !== 'screen') {
                 otSpeech.addSubscriber(subscriber);
               }
             });
+
+            subscriber.on('destroyed', () => {
+              subscriber.off();
+              endAnnotation(subscriber);
+            })
 
             // Note: Use this only if InsertDefaultUI is false
             if (!insertDefaultUI) {
@@ -1134,44 +1192,53 @@
             return;
           }
 
-          screenPublisher = OT.initPublisher('screenContainer', {
-            videoSource: 'screen',
-            fitMode: 'contain',
-            insertMode: 'append',
-            name: `${name}-screen`,
-            resolution: '1280x720',
-            showControls: false,
-            width: '100%',
-            height: '-webkit-fill-available',
-            style: { nameDisplayMode: "off" }
-          }, (error) => {
-            if (error) {
-              handleError(error);
-              stopScreen();
-              return;
-            }
-            
-            // Publish to Session
-            OTSession.publish(screenPublisher, (err) => {
-              if (err) {
-                handleError(error);
-                return;
-              }
+          const screenContainer = document.getElementById('screenContainer');
+          const annotationAccPack = getAnnotation(screenContainer);
+          startAnnotation(annotationAccPack)
+            .then(() => {
+              screenPublisher = OT.initPublisher('screenContainer', {
+                videoSource: 'screen',
+                fitMode: 'contain',
+                insertMode: 'append',
+                name: `${name}-screen`,
+                resolution: '1280x720',
+                showControls: false,
+                width: '100%',
+                height: '-webkit-fill-available',
+                style: { nameDisplayMode: "off" }
+              }, (error) => {
+                if (error) {
+                  handleError(error);
+                  stopScreen();
+                  return;
+                }
+                
+                // Publish to Session
+                OTSession.publish(screenPublisher, (err) => {
+                  if (err) {
+                    handleError(error);
+                    endAnnotation(screenPublisher);
+                    return;
+                  }
 
-              document.getElementById('button-screen-share').classList.remove('Vlt-btn--tertiary');
-              document.getElementById('button-screen-share').classList.add('Vlt-btn--primary');
-              
-              otSpeech.notifySpeakerChange();
+                  document.getElementById('button-screen-share').classList.remove('Vlt-btn--tertiary');
+                  document.getElementById('button-screen-share').classList.add('Vlt-btn--primary');
+                  
+                  otSpeech.notifySpeakerChange();
+
+                  setupAnnotation(annotationAccPack, screenPublisher, screenContainer);
+                })
+              });
+
+              screenPublisher.on('streamCreated', (event) => {
+                otSpeech.notifySpeakerChange();
+              });
+
+              screenPublisher.on('streamDestroyed', (event) => {
+                stopScreen();
+              });
             })
-          });
-
-          screenPublisher.on('streamCreated', (event) => {
-            otSpeech.notifySpeakerChange();
-          });
-
-          screenPublisher.on('streamDestroyed', (event) => {
-            stopScreen();
-          });
+            .catch(error => console.error(error));
         } catch (error) {
           handleError(error);
         }
@@ -1179,6 +1246,8 @@
       
       function stopScreen() {
         if (screenPublisher != null) {
+          endAnnotation(screenPublisher);
+
           OTSession.unpublish(screenPublisher);
           screenPublisher = null;
         }
