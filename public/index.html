@@ -7,7 +7,8 @@
     <script src="https://apis.google.com/js/platform.js" async defer></script>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.5/socket.io.js" integrity="sha512-2rUSTSAeOO02jF6eBqENNqPs1EohenJ5j+1dgDPdXSLz9nOlrr8DJk4zW/lDy8rjhGCSonW3Gx812XJQIKZKJQ==" crossorigin="anonymous"></script>
-
+    <script src="https://cdn.jsdelivr.net/npm/underscore@1.12.0/underscore-min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.js"></script>
     <script src="https://static.opentok.com/v2/js/opentok.min.js"></script>
     <script src="opentok-annotation.js"></script>
     <script src="lib/audioLevel/audioLevel.js"></script>
@@ -41,6 +42,8 @@
       <div id="subtitleContainer" style="width: 100%; position: absolute; z-index: 8999; bottom: 15px; left: 0; right: 0; padding-left: 5; padding-right: 5px; ">
         <div id="subtitleBubble" style="max-width: 100%; font-size: 18px; color: white; background-color: #00000080;"></div>
       </div>
+
+      <div id="annotationToolbarContainer" style="width:100%; position: absolute; z-index: 9998; bottom: 150px; left: 0; right: 0"></div>
 
       <div id="stream-control" style="width: 100%; position: absolute; z-index: 9999; bottom: 50px; left: 0; right: 0;" hidden>
         <div style="display: flex; flex-direction: row; justify-content: center; align-items: center;">
@@ -317,6 +320,8 @@
       let transcriptionStarted = false;
       let transcriptionSocket;
 
+      let annotation = null;
+
 
       // Debouncing logic for handling window resize layout adjustment
       let notifySpeakerChangeTimeout = null;
@@ -578,13 +583,14 @@
       }
 
       const IMAGE_ASSETS = 'annotation';
+      const TOOLBAR_BG_COLOR = '#1a99ce';
       function getAnnotation(aDomElement, aOptions) {
         aOptions = aOptions || {};
         const options = {
           session: aOptions.session || OTSession,
           watchForResize: aOptions.watchForResize || window,
           canvasContainer: aDomElement,
-          imageAssets: IMAGE_ASSETS
+          imageAssets: IMAGE_ASSETS,
         };
         return new AnnotationAccPack(options);
       }
@@ -598,10 +604,7 @@
           return Promise.resolve();
         }
         annotation = aAccPack;
-        Utils.addEventsHandlers('roomView:', {
-          screenChange: resizeAnnotationCanvas
-        });
-        return aAccPack.start(_session, {
+        return aAccPack.start(OTSession, {
           imageAssets: IMAGE_ASSETS,
           backgroundColor: TOOLBAR_BG_COLOR
         });
@@ -928,6 +931,7 @@
 
         adjustLayout(mappedPositions, numberOfActiveSpeakers);
         updateSpeakerPins();
+        resizeAnnotationCanvas();
 
         if (audioSinkId != null && audioSinkId !== '') {
           console.log('Updating audio sink for all video elements');
