@@ -11,6 +11,7 @@
     <script src="https://static.opentok.com/v2/js/opentok.min.js"></script>
     <script src="lib/audioLevel/audioLevel.js"></script>
     <script src="lib/layout/layout.js"></script>
+    <script src="lib/annotation//annotation.js"></script>
 
     <style>
       body, div {
@@ -274,6 +275,7 @@
       const layoutContainer = document.getElementById("layoutContainer");
       const screenContainer = document.getElementById("screenContainer");
 
+      let otAnnotation = OTAnnotation();
       let { adjustLayout, updateHighlight, addSelfSpeakerId, removeSelfSpeakerId } = OTLayout(layoutContainer, screenContainer);
       let otSpeech = OTSpeech({ numberOfActiveSpeakers: initialNumberOfActiveSpeakers });
       otSpeech.setOnActiveSpeakerChangeListener(onSpeakerOrderChanged);
@@ -635,6 +637,11 @@
               }
             });
 
+            // Add Subscriber Annotation (screen only)
+            if (event.stream.videoType === 'screen') {
+              otAnnotation.startSubscriber(subscriber, 'screenContainer');
+            }
+
             // Note: Use this only if InsertDefaultUI is false
             if (!insertDefaultUI) {
               subscriber.on('videoElementCreated', (e) => {
@@ -660,6 +667,12 @@
 
           OTSession.on('streamDestroyed', (event) => {
             console.log('Stream Destroyed');
+
+            // Remove Subscriber Annotation (screen only)
+            if (event.stream.videoType === 'screen') {
+              const subscriber = getSubscriberIdByStreamId(event.stream.id);
+              otAnnotation.endSubscriber(subscriber);
+            }
 
             // Remove Subscriber from OT Speech
             otSpeech.removeSubscriberByStreamId(event.stream.id);
@@ -1042,7 +1055,7 @@
       async function listAudioOutputs() {
         try {
           const devices = await listOutputs();
-          console.log(devices);
+          // console.log(devices);
           const filteredDevices = devices.filter(device => device.kind === 'audiooutput');
           return Promise.resolve(filteredDevices);
         } catch (error) {
@@ -1167,9 +1180,15 @@
 
           screenPublisher.on('streamCreated', (event) => {
             otSpeech.notifySpeakerChange();
+
+            // Add Publisher Annotation (screen only)
+            otAnnotation.startPublisher(screenPublisher, 'screenContainer');
           });
 
           screenPublisher.on('streamDestroyed', (event) => {
+            // Remove Publisher Annotation (screen only)
+            otAnnotation.endPublisher(screenPublisher)
+
             stopScreen();
           });
         } catch (error) {
