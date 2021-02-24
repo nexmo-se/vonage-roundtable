@@ -4,6 +4,7 @@ OTAnnotation = () => {
   let drawListener = null;
   const canvases = {};
   const pubsubs = {};
+  const colors = {};
 
   const setDrawListener = (listener) => {
     drawListener = listener;
@@ -12,13 +13,6 @@ OTAnnotation = () => {
   const getCanvasDimensions = (containerDimensions, videoDimensions) => {
     const { width: videoWidth, height: videoHeight } = videoDimensions;
     const { width: containerWidth, height: containerHeight } = containerDimensions;
-
-    // console.log({
-    //   videoWidth,
-    //   videoHeight,
-    //   containerWidth,
-    //   containerHeight,
-    // });
 
     // Aspect Ratio
     const containerAspectRatio = containerWidth / containerHeight;
@@ -88,8 +82,10 @@ OTAnnotation = () => {
     if (drawingStream[name]) {
       const coordinate = getDrawCoordinate(canvas, e);
 
+      const color = colors[name] || '#ff0000';
+
       // Draw
-      draw(canvas, drawingStream[name], coordinate);
+      draw(canvas, drawingStream[name], coordinate, color);
 
       // Canvas Dimenstions
       const canvasDimensions = canvas.getBoundingClientRect();
@@ -100,6 +96,7 @@ OTAnnotation = () => {
 
       // Stroke
       const stroke = {
+        color,
         from: normalizedPreviousCoordinate,
         to: normalizedCurrentCoordinate,
       };
@@ -128,6 +125,31 @@ OTAnnotation = () => {
     }
   };
 
+  const handleMouseEnter = (name, canvas) => (e) => {
+    console.log(`Mouse Enter - ${name}`);
+  };
+
+  const handleMouseLeave = (name, canvas) => (e) => {
+    if (drawingStream[name]) {
+      console.log(`Mouse Leave - ${name}`);
+      const coordinate = getDrawCoordinate(canvas, e);
+      delete drawingStream[name];
+    }
+  };
+
+  const undoDrawing = (name, canvas) => {
+    if (drawingHistory[name] && drawingHistory[name].length > 0) {
+      drawingHistory[name] = drawingHistory[name].slice(0, drawingHistory[name].length - 1);
+    }
+
+    // Remove all current drawing
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Restore previous drawing
+    refreshStrokes(name);
+  };
+
   const clearDrawing = (name, canvas) => {
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -145,7 +167,7 @@ OTAnnotation = () => {
     // Canvas Dimensions
     const canvasDimensions = canvas.getBoundingClientRect();
 
-    const strokes = drawingHistory[name];
+    const strokes = drawingHistory[name] || [];
     for (let i = 0; i < strokes.length; i += 1) {
       const stroke = strokes[i];
 
@@ -153,8 +175,11 @@ OTAnnotation = () => {
       const fromCoordinate = getRelativeCoordinate(stroke.from, canvasDimensions);
       const toCoordinate = getRelativeCoordinate(stroke.to, canvasDimensions);
 
+      // Get Color
+      const color = stroke.color;
+
       // Draw
-      draw(canvas, fromCoordinate, toCoordinate);
+      draw(canvas, fromCoordinate, toCoordinate, color);
     };
   };
 
@@ -179,19 +204,99 @@ OTAnnotation = () => {
     const fromCoordinate = getRelativeCoordinate(stroke.from, canvasDimensions);
     const toCoordinate = getRelativeCoordinate(stroke.to, canvasDimensions);
 
+    // Get Color
+    const color = stroke.color;
+
     // Draw
-    draw(canvas, fromCoordinate, toCoordinate);
+    draw(canvas, fromCoordinate, toCoordinate, color);
   };
 
-  const draw = (canvas, previousCoordinate, currentCoordinate) => {
+  const draw = (canvas, previousCoordinate, currentCoordinate, color) => {
     const ctx = canvas.getContext('2d');
-    ctx.strokeStyle = 'red';
+    ctx.strokeStyle = color;
     ctx.lineWidth = 4;
     ctx.beginPath();
     ctx.moveTo(previousCoordinate.x, previousCoordinate.y);
     ctx.lineTo(currentCoordinate.x, currentCoordinate.y);
     ctx.stroke();
     ctx.closePath();
+  }
+
+  const createColorOption = (displayName, value, selected = false) => {
+    const option = document.createElement('option');
+    option.value = value;
+    option.innerText = displayName;
+    option.selected = selected;
+    option.style.color = '#000000';
+
+    return option;
+  };
+
+  const createColorSelect = () => {
+    const redOption = createColorOption('Red', '#ff0000', true);
+    const greenOption = createColorOption('Green', '#00ff00', false);
+    const blueOption = createColorOption('Blue', '#0000ff', false);
+    const cyanOption = createColorOption('Cyan', '#00ffff', false);
+    const magentaOption = createColorOption('Magenta', '#ff00ff', false);
+    const yellowOption = createColorOption('Yellow', '#ffff00', false);
+
+    const select = document.createElement('select');
+    select.style.color = '#000000';
+    select.style.height = 28;
+    select.style.marginRight = 4;
+    select.style.borderRadius = 4;
+
+    select.appendChild(redOption);
+    select.appendChild(greenOption);
+    select.appendChild(blueOption);
+
+    select.appendChild(cyanOption);
+    select.appendChild(magentaOption);
+    select.appendChild(yellowOption);
+
+    return select;
+  };
+
+  const addToolbar = (name, canvas) => {
+    const toolbar = document.createElement('div');
+    toolbar.id = `drawing-toolbar-${name}`;
+    toolbar.style.position = 'absolute';
+    toolbar.style.bottom = 0;
+    toolbar.style.display = 'flex';
+    toolbar.style.flexDirection = 'row';
+    toolbar.style.alignItems = 'center';
+    toolbar.style.justifyContent = 'start';
+
+    // Undo
+    const undoButton = document.createElement('button');
+    undoButton.innerText = 'Undo';
+    undoButton.style.color = '#000000';
+    undoButton.style.marginRight = 4;
+    undoButton.style.padding = 4;
+    undoButton.style.borderRadius = 4;
+    undoButton.onclick = () => undoDrawing(name, canvas);
+
+    // Clear
+    const clearButton = document.createElement('button');
+    clearButton.innerText = 'Clear';
+    clearButton.style.color = '#000000';
+    clearButton.style.marginRight = 4;
+    clearButton.style.padding = 4;
+    clearButton.style.borderRadius = 4;
+    clearButton.onclick = () => clearDrawing(name, canvas);
+    
+    // Colour
+    const colorSelect = createColorSelect();
+    colorSelect.onchange = (e) => colors[name] = e.target.value;
+
+    toolbar.appendChild(undoButton);
+    toolbar.appendChild(clearButton);
+    toolbar.appendChild(colorSelect);
+
+    console.log(canvas.parentNode);
+    canvas.parentNode.appendChild(toolbar);
+
+    return toolbar;
   }
 
   const startPublisher = (publisher) => {
@@ -223,9 +328,13 @@ OTAnnotation = () => {
     canvas.onmousedown = handleDrawStart(publisherName, canvas);
     canvas.onmouseup = handleDrawEnd(publisherName, canvas);
     canvas.onmousemove = handleDrawMove(publisherName, canvas);
-    canvas.onmouseleave = handleDrawEnd(publisherName, canvas);
+    canvas.onmouseenter = handleMouseEnter(publisherName, canvas);
+    canvas.onmouseleave = handleMouseLeave(publisherName, canvas);
 
+    
     domElement.appendChild(canvas);
+    addToolbar(publisherName, canvas);
+
     canvases[publisherName] = canvas;
     pubsubs[publisherName] = publisher;
   };
@@ -237,6 +346,8 @@ OTAnnotation = () => {
     if (publisherName) {
       delete canvases[publisherName];
       delete pubsubs[publisherName];
+      delete drawingHistory[publisherName];
+      delete drawingStream[publisherName];
     }
   };
 
@@ -269,9 +380,13 @@ OTAnnotation = () => {
     canvas.onmousedown = handleDrawStart(subscriberName, canvas);
     canvas.onmouseup = handleDrawEnd(subscriberName, canvas);
     canvas.onmousemove = handleDrawMove(subscriberName, canvas);
-    canvas.onmouseleave = handleDrawEnd(subscriberName, canvas);
+    canvas.onmouseenter = handleMouseEnter(subscriberName, canvas);
+    canvas.onmouseleave = handleMouseLeave(subscriberName, canvas);
+
 
     domElement.appendChild(canvas);
+    addToolbar(subscriberName, canvas);
+
     canvases[subscriberName] = canvas;
     pubsubs[subscriberName] = subscriber;
   };
@@ -283,6 +398,8 @@ OTAnnotation = () => {
     if (subscriberName) {
       delete canvases[subscriberName];
       delete pubsubs[subscriberName];
+      delete drawingHistory[subscriberName];
+      delete drawingStream[subscriberName];
     }
   };
 
