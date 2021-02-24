@@ -1,13 +1,20 @@
 OTAnnotation = () => {
   const drawingStream = {};
   const drawingHistory = {};
+
   let drawListener = null;
+  let clearListener = null;
+
   const canvases = {};
   const pubsubs = {};
   const colors = {};
 
   const setDrawListener = (listener) => {
     drawListener = listener;
+  };
+
+  const setClearListener = (listener) => {
+    clearListener = listener;
   };
 
   const getCanvasDimensions = (containerDimensions, videoDimensions) => {
@@ -150,7 +157,13 @@ OTAnnotation = () => {
     refreshStrokes(name);
   };
 
-  const clearDrawing = (name, canvas) => {
+  const clearDrawing = (name) => {
+    const canvas = canvases[name];
+    if (canvas == null) {
+      console.error(`Canvas [${name}] does not exist`);
+      return;
+    }
+
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -239,6 +252,10 @@ OTAnnotation = () => {
     const cyanOption = createColorOption('Cyan', '#00ffff', false);
     const magentaOption = createColorOption('Magenta', '#ff00ff', false);
     const yellowOption = createColorOption('Yellow', '#ffff00', false);
+    const orangeOption = createColorOption('Orange', '#ff8000', false);
+    const purpleOption = createColorOption('Purple', '#8000ff', false);
+    const whiteOption = createColorOption('White', '#ffffff', false);
+    const blackOption = createColorOption('Black', '#000000', false);
 
     const select = document.createElement('select');
     select.style.color = '#000000';
@@ -254,6 +271,12 @@ OTAnnotation = () => {
     select.appendChild(magentaOption);
     select.appendChild(yellowOption);
 
+    select.appendChild(orangeOption);
+    select.appendChild(purpleOption);
+
+    select.appendChild(whiteOption);
+    select.appendChild(blackOption);
+
     return select;
   };
 
@@ -268,13 +291,13 @@ OTAnnotation = () => {
     toolbar.style.justifyContent = 'start';
 
     // Undo
-    const undoButton = document.createElement('button');
-    undoButton.innerText = 'Undo';
-    undoButton.style.color = '#000000';
-    undoButton.style.marginRight = 4;
-    undoButton.style.padding = 4;
-    undoButton.style.borderRadius = 4;
-    undoButton.onclick = () => undoDrawing(name, canvas);
+    // const undoButton = document.createElement('button');
+    // undoButton.innerText = 'Undo';
+    // undoButton.style.color = '#000000';
+    // undoButton.style.marginRight = 4;
+    // undoButton.style.padding = 4;
+    // undoButton.style.borderRadius = 4;
+    // undoButton.onclick = () => undoDrawing(name, canvas);
 
     // Clear
     const clearButton = document.createElement('button');
@@ -283,13 +306,16 @@ OTAnnotation = () => {
     clearButton.style.marginRight = 4;
     clearButton.style.padding = 4;
     clearButton.style.borderRadius = 4;
-    clearButton.onclick = () => clearDrawing(name, canvas);
+    clearButton.onclick = () => {
+      clearDrawing(name);
+      clearListener && clearListener(name);
+    };
     
     // Colour
     const colorSelect = createColorSelect();
     colorSelect.onchange = (e) => colors[name] = e.target.value;
 
-    toolbar.appendChild(undoButton);
+    // toolbar.appendChild(undoButton);
     toolbar.appendChild(clearButton);
     toolbar.appendChild(colorSelect);
 
@@ -442,6 +468,7 @@ OTAnnotation = () => {
 
   return {
     setDrawListener,
+    setClearListener,
 
     clearDrawing,
     addStroke,

@@ -277,6 +277,7 @@
 
       let otAnnotation = OTAnnotation();
       otAnnotation.setDrawListener(onStrokeDrawn);
+      otAnnotation.setClearListener(onStrokeClear);
 
       let { adjustLayout, updateHighlight, addSelfSpeakerId, removeSelfSpeakerId } = OTLayout(layoutContainer, screenContainer);
       let otSpeech = OTSpeech({ numberOfActiveSpeakers: initialNumberOfActiveSpeakers });
@@ -780,9 +781,13 @@
               document.getElementById('chat-container').appendChild(row);
 
               console.log(`${name}${isSelf ? ' (me)' : ''} - ${text}`);
-            } else if (type === 'signal:draw') {
+            } else if (type === 'signal:draw-stroke') {
               const { streamName, stroke } = JSON.parse(data);
               otAnnotation.addStroke(streamName, stroke);
+            } else if (type === 'signal:draw-clear') {
+              console.log('clear received');
+              const { streamName } = JSON.parse(data);
+              otAnnotation.clearDrawing(streamName);
             } else {
               console.log(`Signal: type ${type}, data ${data}`);
             }
@@ -914,10 +919,21 @@
       function onStrokeDrawn(streamName, stroke) {
         // Send Signal for stroke
         OTSession.signal({
-          type: 'draw',
+          type: 'draw-stroke',
           data: JSON.stringify({
             streamName,
             stroke,
+          }),
+        }, (error) => error && console.error(error));
+      }
+
+      // This callback/listener will handle annotation drawing event
+      function onStrokeClear(streamName) {
+        // Send Signal for stroke
+        OTSession.signal({
+          type: 'draw-clear',
+          data: JSON.stringify({
+            streamName,
           }),
         }, (error) => error && console.error(error));
       }
