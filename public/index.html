@@ -276,6 +276,8 @@
       const screenContainer = document.getElementById("screenContainer");
 
       let otAnnotation = OTAnnotation();
+      otAnnotation.setDrawListener(onStrokeDrawn);
+
       let { adjustLayout, updateHighlight, addSelfSpeakerId, removeSelfSpeakerId } = OTLayout(layoutContainer, screenContainer);
       let otSpeech = OTSpeech({ numberOfActiveSpeakers: initialNumberOfActiveSpeakers });
       otSpeech.setOnActiveSpeakerChangeListener(onSpeakerOrderChanged);
@@ -639,7 +641,7 @@
 
             // Add Subscriber Annotation (screen only)
             if (event.stream.videoType === 'screen') {
-              otAnnotation.startSubscriber(subscriber, 'screenContainer');
+              otAnnotation.startSubscriber(subscriber);
             }
 
             // Note: Use this only if InsertDefaultUI is false
@@ -670,7 +672,7 @@
 
             // Remove Subscriber Annotation (screen only)
             if (event.stream.videoType === 'screen') {
-              const subscriber = getSubscriberIdByStreamId(event.stream.id);
+              const subscriber = otSpeech.getSubscriberIdByStreamId(event.stream.id);
               otAnnotation.endSubscriber(subscriber);
             }
 
@@ -778,6 +780,9 @@
               document.getElementById('chat-container').appendChild(row);
 
               console.log(`${name}${isSelf ? ' (me)' : ''} - ${text}`);
+            } else if (type === 'signal:draw') {
+              const { streamName, stroke } = JSON.parse(data);
+              otAnnotation.addStroke(streamName, stroke);
             } else {
               console.log(`Signal: type ${type}, data ${data}`);
             }
@@ -882,6 +887,7 @@
           .filter(subscriberId => subscriberId != null);
 
         adjustLayout(mappedPositions, numberOfActiveSpeakers);
+        otAnnotation.updateCanvases();
         updateSpeakerPins();
 
         if (audioSinkId != null && audioSinkId !== '') {
@@ -902,6 +908,18 @@
         const mappedId = insertDefaultUI ? otSpeech.getSubscriberIdByStreamId(mostActiveSpeakerId) : mostActiveSpeakerId
           .filter(subscriberId => subscriberId != null);
         updateHighlight(mappedId);
+      }
+
+      // This callback/listener will handle annotation drawing event
+      function onStrokeDrawn(streamName, stroke) {
+        // Send Signal for stroke
+        OTSession.signal({
+          type: 'draw',
+          data: JSON.stringify({
+            streamName,
+            stroke,
+          }),
+        }, (error) => error && console.error(error));
       }
 
       function toggleCamera() {
@@ -1182,7 +1200,7 @@
             otSpeech.notifySpeakerChange();
 
             // Add Publisher Annotation (screen only)
-            otAnnotation.startPublisher(screenPublisher, 'screenContainer');
+            otAnnotation.startPublisher(screenPublisher);
           });
 
           screenPublisher.on('streamDestroyed', (event) => {

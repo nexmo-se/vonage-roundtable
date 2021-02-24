@@ -2,6 +2,8 @@ OTAnnotation = () => {
   const drawingStream = {};
   const drawingHistory = {};
   let drawListener = null;
+  const canvases = {};
+  const pubsubs = {};
 
   const setDrawListener = (listener) => {
     drawListener = listener;
@@ -11,12 +13,12 @@ OTAnnotation = () => {
     const { width: videoWidth, height: videoHeight } = videoDimensions;
     const { width: containerWidth, height: containerHeight } = containerDimensions;
 
-    console.log({
-      videoWidth,
-      videoHeight,
-      containerWidth,
-      containerHeight,
-    });
+    // console.log({
+    //   videoWidth,
+    //   videoHeight,
+    //   containerWidth,
+    //   containerHeight,
+    // });
 
     // Aspect Ratio
     const containerAspectRatio = containerWidth / containerHeight;
@@ -99,7 +101,7 @@ OTAnnotation = () => {
       // Stroke
       const stroke = {
         from: normalizedPreviousCoordinate,
-        to: normalizedPreviousCoordinate,
+        to: normalizedCurrentCoordinate,
       };
 
       // Add to History
@@ -133,15 +135,45 @@ OTAnnotation = () => {
     delete drawingHistory[name];
   };
 
-  const addStroke = (name, canvas, stroke) => {
+  const refreshStrokes = (name) => {
+    const canvas = canvases[name];
+    if (canvas == null) {
+      console.error(`Canvas [${name}] does not exist`);
+      return;
+    }
+
+    // Canvas Dimensions
+    const canvasDimensions = canvas.getBoundingClientRect();
+
+    const strokes = drawingHistory[name];
+    for (let i = 0; i < strokes.length; i += 1) {
+      const stroke = strokes[i];
+
+      // Get Normalized
+      const fromCoordinate = getRelativeCoordinate(stroke.from, canvasDimensions);
+      const toCoordinate = getRelativeCoordinate(stroke.to, canvasDimensions);
+
+      // Draw
+      draw(canvas, fromCoordinate, toCoordinate);
+    };
+  };
+
+  const addStroke = (name, stroke) => {
+    const canvas = canvases[name];
+    if (canvas == null) {
+      console.error(`Canvas [${name}] does not exist`);
+      return;
+    }
+
+    // Canvas Dimensions
+    const canvasDimensions = canvas.getBoundingClientRect();
+
     // Add to History
     if (drawingHistory[name] == null) {
       drawingHistory[name] = [];
     }
     drawingHistory[name].push(stroke);
 
-    // Canvas Dimenstions
-    const canvasDimensions = canvas.getBoundingClientRect();
 
     // Get Normalized
     const fromCoordinate = getRelativeCoordinate(stroke.from, canvasDimensions);
@@ -165,7 +197,6 @@ OTAnnotation = () => {
   const startPublisher = (publisher) => {
     const publisherName = publisher && publisher.stream && publisher.stream.name || 'unknown';
     console.log(`Start Publisher Annotation - ${publisherName}`);
-    // console.log(publisher);
 
     // Video Dimensions
     const { videoDimensions } = publisher.stream;
@@ -173,8 +204,6 @@ OTAnnotation = () => {
     // Container Dimensions
     const domElement = publisher.element;
     const containerDimensions = domElement.getBoundingClientRect();
-    // console.log(domElement);
-    // console.log(containerDimensions);
 
     // Canvas Dimensions
     const canvasDimensions = getCanvasDimensions(containerDimensions, videoDimensions);
@@ -197,17 +226,23 @@ OTAnnotation = () => {
     canvas.onmouseleave = handleDrawEnd(publisherName, canvas);
 
     domElement.appendChild(canvas);
+    canvases[publisherName] = canvas;
+    pubsubs[publisherName] = publisher;
   };
 
   const endPublisher = (publisher) => {
     console.log(`End Publisher Annotation`);
-    // console.log(publisher);
+
+    const publisherName = publisher && publisher.stream && publisher.stream.name || 'unknown';
+    if (publisherName) {
+      delete canvases[publisherName];
+      delete pubsubs[publisherName];
+    }
   };
 
-  const startSubscriber = (subscriber, domElementId) => {
+  const startSubscriber = (subscriber) => {
     const subscriberName = subscriber && subscriber.stream && subscriber.stream.name || 'unknown';
     console.log(`Start Subscriber Annotation - ${subscriberName}`);
-    // console.log(subscriber);
 
     // Video Dimensions
     const { videoDimensions } = subscriber.stream;
@@ -215,26 +250,77 @@ OTAnnotation = () => {
     // Container Dimensions
     const domElement = subscriber.element;
     const containerDimensions = domElement.getBoundingClientRect();
-    // console.log(domElement);
 
     // Canvas Dimensions
     const canvasDimensions = getCanvasDimensions(containerDimensions, videoDimensions);
 
     // Create Canvas
     const canvas = document.createElement('canvas');
+
+    canvas.width = canvasDimensions.width;
+    canvas.height = canvasDimensions.height;
+
     canvas.style.position = 'absolute';
     canvas.style.width = canvasDimensions.width;
     canvas.style.height = canvasDimensions.height;
     canvas.style.left = (containerDimensions.width - canvasDimensions.width) / 2;
     canvas.style.top = (containerDimensions.height - canvasDimensions.height) / 2;
-    // console.log(canvas);
+
+    canvas.onmousedown = handleDrawStart(subscriberName, canvas);
+    canvas.onmouseup = handleDrawEnd(subscriberName, canvas);
+    canvas.onmousemove = handleDrawMove(subscriberName, canvas);
+    canvas.onmouseleave = handleDrawEnd(subscriberName, canvas);
 
     domElement.appendChild(canvas);
+    canvases[subscriberName] = canvas;
+    pubsubs[subscriberName] = subscriber;
   };
 
   const endSubscriber = (subscriber) => {
     console.log(`End Subscriber Annotation`);
-    // console.log(subscriber);
+
+    const subscriberName = subscriber && subscriber.stream && subscriber.stream.name || 'unknown';
+    if (subscriberName) {
+      delete canvases[subscriberName];
+      delete pubsubs[subscriberName];
+    }
+  };
+
+  const updateCanvases = () => {
+    // For each canvas, get relevant publisher
+    // Update Width, Height, Left, Top
+    const names = Object.keys(pubsubs);
+    for (let i = 0; i < names.length; i += 1) {
+      const name = names[i];
+      const pubsub = pubsubs[name];
+      const canvas = canvases[name];
+
+      if (pubsub == null || canvas == null) {
+        console.error(`Null pubsub or canvas for ${name}`);
+        continue;
+      }
+
+      // Video Dimensions
+      const { videoDimensions } = pubsub.stream;
+
+      // Container Dimensions
+      const domElement = pubsub.element;
+      const containerDimensions = domElement.getBoundingClientRect();
+
+      // Canvas Dimensions
+      const canvasDimensions = getCanvasDimensions(containerDimensions, videoDimensions);
+
+      canvas.width = canvasDimensions.width;
+      canvas.height = canvasDimensions.height;
+  
+      canvas.style.position = 'absolute';
+      canvas.style.width = canvasDimensions.width;
+      canvas.style.height = canvasDimensions.height;
+      canvas.style.left = (containerDimensions.width - canvasDimensions.width) / 2;
+      canvas.style.top = (containerDimensions.height - canvasDimensions.height) / 2;
+
+      refreshStrokes(name);
+    }
   };
 
   return {
@@ -248,5 +334,7 @@ OTAnnotation = () => {
 
     startSubscriber,
     endSubscriber,
+
+    updateCanvases,
   };
 };
