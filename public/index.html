@@ -11,7 +11,7 @@
     <script src="https://static.opentok.com/v2/js/opentok.min.js"></script>
     <script src="lib/audioLevel/audioLevel.js"></script>
     <script src="lib/layout/layout.js"></script>
-    <script src="lib/annotation//annotation.js"></script>
+    <script src="lib/annotation/annotation.js"></script>
 
     <style>
       body, div {
@@ -69,7 +69,7 @@
           </div>
 
           <div class="Vlt-tooltip Vlt-tooltip--top" style="margin-left: 5px; margin-right: 5px;" title="Video Player">
-            <button id="button-video-player" class="Vlt-btn Vlt-btn--large Vlt-btn--tertiary Vlt-btn--icon" onclick="toggleVideoPlayer()">
+            <button id="button-video-player" class="Vlt-modal-trigger Vlt-btn Vlt-btn--large Vlt-btn--tertiary Vlt-btn--icon" data-modal="videoPopupModal">
               <svg><use xlink:href="volta-icons.svg#Vlt-icon-small-video-full" /></svg>
             </button>
           </div>
@@ -262,6 +262,23 @@
           
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="videoPopupModal" class="Vlt-modal">
+      <div class="Vlt-modal__panel" style="width: 800px;">
+        <div class="Vlt-modal__header">
+          <h4>Notice</h4>
+          <div class="Vlt-modal__dismiss"></div>
+        </div>
+        <div class="Vlt-modal__content">
+          <div style="display: flex; flex-direction: column;">
+            <div>This feature may not work on some newer Chrome versions.</div>
+          </div>
+        </div>
+        <div class="Vlt-modal__footer" style="display: flex; flex-direction: row; justify-content: flex-start;">
+          <button class="Vlt-btn Vlt-btn--app Vlt-btn--primary Vlt-modal__confirm" onclick="toggleVideoPlayer()">OK</button>
         </div>
       </div>
     </div>
@@ -1921,7 +1938,7 @@
       }
 
       waitForReady(() => {
-        Volta.init(['tab', 'tooltip']);
+        Volta.init(['tab', 'tooltip', 'modal']);
 
         const params = getParams();
         let {
