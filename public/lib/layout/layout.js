@@ -157,7 +157,7 @@ OTLayout = (layoutContainer, screenContainer, options) => {
     const w = window.outerWidth;
     const h = window.outerHeight;
     const isPortrait = h > w;
-    // console.log(`${w} x ${h} [${isPortrait ? 'Portrait' : 'Landscape'}]`);
+    console.log(`${w} x ${h} [${isPortrait ? 'Portrait' : 'Landscape'}]`);
 
 
     const parentElement = layoutContainerElement.parentNode;
@@ -174,6 +174,7 @@ OTLayout = (layoutContainer, screenContainer, options) => {
       screenContainerElement.style.display = hasScreens ? 'flex' : 'none';
       screenContainerElement.style.width = '100%';
       screenContainerElement.style.height = null;
+      screenContainerElement.classList.remove('fillAvailableHeight');
 
       layoutContainerElement.style.height = hasScreens ? '200px' : '100%';
       layoutContainerElement.style.width = '100%';
@@ -184,18 +185,18 @@ OTLayout = (layoutContainer, screenContainer, options) => {
       // Set Parent container
       parentElement.style['flex-direction'] = 'row';
       parentElement.style.width = null;
-      parentElement.style.height = '-webkit-fill-available';
+      parentElement.classList.remove('fillAvailableHeight');
 
       // Set width of containers
       screenContainerElement.style.display = hasScreens ? 'flex' : 'none';
       screenContainerElement.style.width = null;
-      screenContainerElement.style.height = '-webkit-fill-available';
+      screenContainerElement.classList.add('fillAvailableHeight');
 
       layoutContainerElement.style.width = hasScreens ? '200px' : '100%';
-      layoutContainerElement.style.height = '-webkit-fill-available';
       layoutContainerElement.style['flex-direction'] = hasScreens ? 'column' : 'row';
       layoutContainerElement.style['flex-wrap'] = hasScreens ? null : 'wrap';
       layoutContainerElement.style['overflow-y'] = hasScreens ? 'scroll' : null;
+      layoutContainerElement.classList.remove('fillAvailableHeight');
     }
 
     // Update Screen Dimensions
