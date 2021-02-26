@@ -169,6 +169,7 @@ OTLayout = (layoutContainer, screenContainer, options) => {
       parentElement.style['flex-direction'] = 'column';
       parentElement.style.width = '100%';
       parentElement.style.height = null;
+      parentElement.classList.remove('fillAvailableHeight');
 
       // Set width of containers
       screenContainerElement.style.display = hasScreens ? 'flex' : 'none';
@@ -181,11 +182,12 @@ OTLayout = (layoutContainer, screenContainer, options) => {
       layoutContainerElement.style['flex-direction'] = 'row';
       layoutContainerElement.style['flex-wrap'] = hasScreens ? null : 'wrap';
       layoutContainerElement.style['overflow-x'] = hasScreens ? 'scroll' : null;
+      layoutContainerElement.classList.remove('fillAvailableHeight');
     } else {
       // Set Parent container
       parentElement.style['flex-direction'] = 'row';
       parentElement.style.width = null;
-      parentElement.classList.remove('fillAvailableHeight');
+      parentElement.classList.add('fillAvailableHeight');
 
       // Set width of containers
       screenContainerElement.style.display = hasScreens ? 'flex' : 'none';
@@ -196,7 +198,7 @@ OTLayout = (layoutContainer, screenContainer, options) => {
       layoutContainerElement.style['flex-direction'] = hasScreens ? 'column' : 'row';
       layoutContainerElement.style['flex-wrap'] = hasScreens ? null : 'wrap';
       layoutContainerElement.style['overflow-y'] = hasScreens ? 'scroll' : null;
-      layoutContainerElement.classList.remove('fillAvailableHeight');
+      layoutContainerElement.classList.add('fillAvailableHeight');
     }
 
     // Update Screen Dimensions
