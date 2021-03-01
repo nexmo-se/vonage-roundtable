@@ -1587,7 +1587,7 @@
         const index = parseInt(value, 10);
         videoDeviceIndex = index;
 
-        if (videoCycleMode !== 'auto' && videoDeviceIndex > -1) {
+        if (videoCycleMode === 'auto' && videoDeviceIndex > -1) {
           const videoDevice = await getVideoInput(videoDeviceIndex);
           if (videoDevice != null) {
             setVideoSource(videoDevice.deviceId);
@@ -1606,7 +1606,7 @@
         const index = parseInt(value, 10);
         audioDeviceIndex = index;
 
-        if (videoCycleMode !== 'auto' && audioDeviceIndex > -1) {
+        if (videoCycleMode === 'auto' && audioDeviceIndex > -1) {
           const audioDevice = await getAudioInput(audioDeviceIndex);
           if (audioDevice != null) {
             setAudioSource(audioDevice.deviceId);
