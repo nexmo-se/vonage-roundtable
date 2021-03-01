@@ -998,6 +998,22 @@
           stopVideoPlayer();
         }
       }
+
+      function setVideoSource(videoSource) {
+        if (cameraPublisher == null) {
+          return;
+        }
+
+        cameraPublisher.setVideoSource(videoSource)
+      }
+
+      function setAudioSource(audioSource) {
+        if (cameraPublisher == null) {
+          return;
+        }
+
+        cameraPublisher.setAudioSource(audioSource)
+      }
       
       async function startCamera() {
         stopCamera();
@@ -1571,7 +1587,14 @@
         const index = parseInt(value, 10);
         videoDeviceIndex = index;
 
-        startCamera();
+        if (videoCycleMode !== 'auto' && videoDeviceIndex > -1) {
+          const videoDevice = await getVideoInput(videoDeviceIndex);
+          if (videoDevice != null) {
+            setVideoSource(videoDevice.deviceId);
+          }
+        } else {
+          startCamera();
+        }
       }
 
       function onAudioSourceChanged(event) {
@@ -1583,7 +1606,14 @@
         const index = parseInt(value, 10);
         audioDeviceIndex = index;
 
-        startCamera();
+        if (videoCycleMode !== 'auto' && audioDeviceIndex > -1) {
+          const audioDevice = await getAudioInput(audioDeviceIndex);
+          if (audioDevice != null) {
+            setAudioSource(audioDevice.deviceId);
+          }
+        } else {
+          startCamera();
+        }
       }
 
       function onAudioSinkChanged(event) {
@@ -1959,7 +1989,7 @@
           hide_control_delay,
           role = 'user',
           sound,
-          cycleMode = 'manual',
+          cycleMode = 'auto',
           sub,
           hide_sidebar = 'false',
           disable_sidebar = 'false',
