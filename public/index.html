@@ -1578,7 +1578,7 @@
         otSpeech.setNumberOfActiveSpeakers(event.target.value);
       }
 
-      function onVideoSourceChanged(event) {
+      async function onVideoSourceChanged(event) {
         const value = event.target.value.replace('video-source-', '');
         if (value === 'vg-default') {
           return;
@@ -1597,7 +1597,7 @@
         }
       }
 
-      function onAudioSourceChanged(event) {
+      async function onAudioSourceChanged(event) {
         const value = event.target.value.replace('audio-source-', '');
         if (value === 'vg-default') {
           return;
