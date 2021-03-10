@@ -1915,6 +1915,15 @@
           .then(devices => {
             const videoSelect = document.getElementById('video-source-select');
             videoSelect.innerHTML = '';
+
+            // Select Input
+            const disabledOption = document.createElement('option');
+            disabledOption.disabled = true;
+            disabledOption.innerText = "Select Input";
+            disabledOption.value = "select";
+            disabledOption.selected = true;
+            videoSelect.appendChild(disabledOption);
+
             for (let i = 0; i < devices.length; i += 1) {
               const device = devices[i];
               const deviceOption = document.createElement('option');
@@ -1937,6 +1946,15 @@
           .then(devices => {
             const audioSelect = document.getElementById('audio-source-select');
             audioSelect.innerHTML = '';
+
+            // Select Input
+            const disabledOption = document.createElement('option');
+            disabledOption.disabled = true;
+            disabledOption.innerText = "Select Input";
+            disabledOption.value = "select";
+            disabledOption.selected = true;
+            audioSelect.appendChild(disabledOption);
+
             for (let i = 0; i < devices.length; i += 1) {
               const device = devices[i];
               const deviceOption = document.createElement('option');
@@ -1959,6 +1977,15 @@
           .then(devices => {
             const audioSelect = document.getElementById('audio-sink-select');
             audioSelect.innerHTML = '';
+
+            // Select Output
+            const disabledOption = document.createElement('option');
+            disabledOption.disabled = true;
+            disabledOption.innerText = "Select Output";
+            disabledOption.value = "select";
+            disabledOption.selected = true;
+            audioSelect.appendChild(disabledOption);
+
             for (let i = 0; i < devices.length; i += 1) {
               const device = devices[i];
               const deviceOption = document.createElement('option');
