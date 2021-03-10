@@ -1236,6 +1236,7 @@
             style: { nameDisplayMode: "off" }
           }, (error) => {
             if (error) {
+              console.log('Screen: error when init');
               handleError(error);
               stopScreen();
               return;
@@ -1244,6 +1245,7 @@
             // Publish to Session
             OTSession.publish(screenPublisher, (err) => {
               if (err) {
+                console.log('Screen: error when publishing');
                 handleError(error);
                 return;
               }
@@ -1263,6 +1265,8 @@
           });
 
           screenPublisher.on('streamDestroyed', (event) => {
+            console.log('Screen: stream destroyed');
+
             // Remove Publisher Annotation (screen only)
             otAnnotation.endPublisher(screenPublisher)
 
@@ -1270,6 +1274,7 @@
           });
         } catch (error) {
           handleError(error);
+          console.log('Screen: error when starting screen');
         }
       }
       
