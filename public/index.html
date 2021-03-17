@@ -12,6 +12,7 @@
     <script src="lib/audioLevel/audioLevel.js"></script>
     <script src="lib/layout/layout.js"></script>
     <script src="lib/annotation/annotation.js"></script>
+    <script src="lib/participation/participation.js"></script>
 
     <style>
       html, body {
@@ -169,6 +170,9 @@
               <div class="Vlt-tabs__panel" style="height: 100%;">
                 <div><label id="participant-count" class="Vlt-label">Enable Sound Effect</label></div>
                 <div id="speaker-list" style="padding: 16px; border: 1px solid #c2c4cc; border-radius: 5px; background-color: #fff;"></div>
+
+                <div><label id="participant-stat-label" class="Vlt-label">Active Duration</label></div>
+                <div id="speaker-stat-list" style="padding: 16px; border: 1px solid #c2c4cc; border-radius: 5px; background-color: #fff;"></div>
               </div>
 
               <div class="Vlt-tabs__panel" style="height: 100%;">
@@ -302,6 +306,9 @@
       const layoutContainer = document.getElementById("layoutContainer");
       const screenContainer = document.getElementById("screenContainer");
 
+      let otParticipation = OTParticipation();
+      otParticipation.setOnParticipationChangeListener(onParticipationChange);
+
       let otAnnotation = OTAnnotation();
       otAnnotation.setDrawListener(onStrokeDrawn);
       otAnnotation.setClearListener(onStrokeClear);
@@ -310,6 +317,8 @@
       let otSpeech = OTSpeech({ numberOfActiveSpeakers: initialNumberOfActiveSpeakers });
       otSpeech.setOnActiveSpeakerChangeListener(onSpeakerOrderChanged);
       otSpeech.setOnMostActiveSpeakerChangeListener(onMostActiveSpeakerChanged);
+
+
 
       let accessToken;
 
@@ -707,6 +716,9 @@
             // Remove Subscriber from OT Speech
             otSpeech.removeSubscriberByStreamId(event.stream.id);
 
+            // Remove Subscriber Stream from Participation
+            otParticipation.deleteParticipant(event.stream.id);
+
             // Remove Subscriber div
             const layoutContainer = event.stream.videoType === 'screen' ? 'screenContainer' : 'layoutContainer';
             const containerElement = document.getElementById(layoutContainer);
@@ -940,6 +952,71 @@
         const mappedId = insertDefaultUI ? otSpeech.getSubscriberIdByStreamId(mostActiveSpeakerId) : mostActiveSpeakerId
           .filter(subscriberId => subscriberId != null);
         updateHighlight(mappedId);
+
+        // Set participant
+        otParticipation.setCurrentParticipant(mostActiveSpeakerId);
+      }
+
+      function onParticipationChange() {
+        // Update Participation List
+        const latestParticipations = otParticipation.getParticipations();
+        const participants = Object.keys(latestParticipations)
+          .map((participantId) => {
+            const participantStream = otSpeech.getStreamByStreamId(participantId);
+            const participantName = (participantStream || {}).name || ' Unknown';
+            const participationDuration = latestParticipations[participantId] || 0;
+            let participationDurationText = '';
+
+            // h m s ms
+            let leftover = participationDuration;
+            const hour = Math.floor(leftover / 3600000);
+            leftover = leftover % 3600000;
+            const minute = Math.floor(leftover / 60000);
+            leftover = leftover % 60000;
+            const second = Math.floor(leftover / 1000);
+            leftover = leftover % 1000;
+            const millisecond = leftover;
+
+            if (hour > 0) {
+              participationDurationText += `${hour} h `;
+            }
+            if (minute > 0 || participationDurationText !== '') {
+              participationDurationText += `${minute} m `;
+            }
+            if (second > 0 || participationDurationText !== '') {
+              participationDurationText += `${second} s `;
+            }
+            participationDurationText += `${millisecond} ms`;
+
+            return {
+              id: participantId,
+              name: participantName,
+              duration: participationDuration,
+              durationText: participationDurationText,
+            };
+          })
+          .sort((a, b) => b.duration - a.duration);
+
+        // Clear previous list
+        const participationListElement = document.getElementById('speaker-stat-list');
+        participationListElement.innerText = '';
+
+        // Add new list
+        for (let i = 0; i < participants.length; i += 1) {
+          const participant = participants[i];
+          const { name, durationText } = participant;
+
+          // Create element
+          const participantElement = document.createElement('div');
+          participantElement.style.width = '100%';
+          participantElement.style.display = 'flex';
+          participantElement.style.flexDirection = 'row';
+          participantElement.style.alignItems = 'center';
+          participantElement.innerText = `${name} - ${durationText}`;
+
+          // Add to list
+          participationListElement.appendChild(participantElement);
+        }
       }
 
       // This callback/listener will handle annotation drawing event

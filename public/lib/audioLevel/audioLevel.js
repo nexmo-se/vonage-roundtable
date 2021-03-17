@@ -377,6 +377,10 @@ OTSpeech = (options) => {
     return (getSubscriberByStreamId(streamId) || {}).id;
   }
 
+  const getStreamByStreamId = (streamId) => {
+    return (getSubscriberByStreamId(streamId) || {}).stream;
+  }
+
   const setSpeakerPin = (channelId, pinned) => {
     if (channels[channelId] != null) {
       channels[channelId].pinned = pinned;
@@ -445,6 +449,7 @@ OTSpeech = (options) => {
     removeSubscriber,
     removeSubscriberByStreamId,
     getSubscriberIdByStreamId,
+    getStreamByStreamId,
 
     // Action
     updateSubscriptionToVideos,
