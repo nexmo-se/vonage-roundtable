@@ -12,6 +12,10 @@ function onChangeListener() {
 }
 ```
 
+### Options
+**participationUpdateInterval**: `INTEGER`
+Interval for automatic participation update in milliseconds
+
 
 #### setCurrentParticipant
 Set current participating speaker

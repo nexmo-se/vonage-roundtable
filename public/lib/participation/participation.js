@@ -1,10 +1,19 @@
 OTParticipation = (options) => {
+  const config = Object.assign({}, options, {
+    participationUpdateInterval: 1000,
+  });
+
   let currentParticipentId = null;
   let currentParticipantStartTime = 0;
 
   let onParticipationChangeListener = null;
 
   const participants = {};
+  
+  // Set Interval to process audio level
+  setInterval(() => {
+    setCurrentParticipant(currentParticipentId);
+  }, config.participationUpdateInterval);
 
   const setCurrentParticipant = (participantId) => {
     if (currentParticipentId && currentParticipantStartTime > 0) {
