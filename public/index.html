@@ -104,12 +104,12 @@
           </div>
         </div>
       </div>
+    </div>
 
-      <div id="sidebar-control" style="position: absolute; right: 20px; top: 20px;">
-        <button id="button-expand-sidebar" class="Vlt-btn Vlt-btn--app Vlt-btn--white Vlt-btn--icon" style="display: none;" onclick="toggleSidebar()">
-          <svg><use xlink:href="volta-icons.svg#Vlt-icon-collapse" /></svg>
-        </button>
-      </div>
+    <div id="sidebar-control" style="display: none; padding-left: 16px; padding-right: 16px; background-color: black;">
+      <button id="button-expand-sidebar" class="Vlt-btn Vlt-btn--app Vlt-btn--white Vlt-btn--icon" onclick="toggleSidebar()">
+        <svg><use xlink:href="volta-icons.svg#Vlt-icon-collapse" /></svg>
+      </button>
     </div>
 
     <div id="sidebar" style="display: flex; flex-direction: column; width: 450px; height: 100%; padding: 16px; background-color: #e6e6e6;">
@@ -1638,11 +1638,15 @@
           sidebarElement.style.display = 'flex';
           document.getElementById('button-collapse-sidebar').style.display = 'block';
           document.getElementById('button-expand-sidebar').style.display = 'none';
+          
+          document.getElementById('sidebar-control').style.display = 'none';
         } else {
           // Hide
           sidebarElement.style.display = 'none';
           document.getElementById('button-collapse-sidebar').style.display = 'none';
           document.getElementById('button-expand-sidebar').style.display = 'block';
+
+          document.getElementById('sidebar-control').style.display = 'block';
         }
 
         otSpeech.notifySpeakerChange();
