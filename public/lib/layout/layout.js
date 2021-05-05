@@ -78,6 +78,7 @@ OTLayout = (layoutContainer, screenContainer, options) => {
     const containerElement = isScreen ? screenContainerElement : layoutContainerElement;
     const { width: containerWidth, height: containerHeight } = containerElement.getBoundingClientRect();
     const containerArea = containerWidth * containerHeight;
+    //console.log(`${isScreen ? 'screen' : 'layout'} container: ${containerWidth} x ${containerHeight}`);
 
     const bestDimension = {
       efficiency: 0,
@@ -191,7 +192,7 @@ OTLayout = (layoutContainer, screenContainer, options) => {
 
       // Set width of containers
       screenContainerElement.style.display = hasScreens ? 'flex' : 'none';
-      screenContainerElement.style.width = null;
+      screenContainerElement.style.width = '0px';
       screenContainerElement.classList.add('fillAvailableHeight');
 
       layoutContainerElement.style.width = hasScreens ? '200px' : '100%';
