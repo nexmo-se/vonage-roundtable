@@ -96,6 +96,12 @@
               <svg><use xlink:href="volta-icons.svg#Vlt-icon-subtitles-full" /></svg>
             </button>
           </div>
+
+          <div class="Vlt-tooltip Vlt-tooltip--top" style="margin-left: 5px; margin-right: 5px;" title="Enable/Disable Whiteboard">
+            <button id="button-whiteboard-enable" class="Vlt-btn Vlt-btn--large Vlt-btn--tertiary Vlt-btn--icon" onclick="toggleWhiteboard()">
+              <svg><use xlink:href="volta-icons.svg#Vlt-icon-compose-full" /></svg>
+            </button>
+          </div>
           
           <div class="Vlt-tooltip Vlt-tooltip--top" style="margin-left: 5px; margin-right: 5px;" title="End Meeting">
             <button id="button-end-call" class="Vlt-btn Vlt-btn--large Vlt-btn--destructive Vlt-btn--icon" onclick="endCall()">
@@ -346,6 +352,7 @@
       let connectionCount = 0;
       let videoCycleMode = 'auto';
       let enableTranscription = false;
+      let enableWhiteboard = true;
 
       let audioDeviceIndex = 0;
       let videoDeviceIndex = 0;
@@ -356,6 +363,9 @@
 
       let transcriptionStarted = false;
       let transcriptionSocket;
+
+      let whiteboardStarted = false;
+      let whiteboardIFrame = null;
 
 
       // Debouncing logic for handling window resize layout adjustment
@@ -459,6 +469,12 @@
             
             // Update Mute
             document.getElementById('mute-all-checkbox').checked = data.muteOnJoin;
+
+            // Update Whiteboard
+            if (data.whiteboardOnJoin) {
+              startWhiteboard(false);
+            }
+
             enableAudio = !data.muteOnJoin;
             return Promise.resolve(data);
           } catch (error) {
@@ -766,6 +782,13 @@
               document.getElementById('button-audio-enable').classList.remove('Vlt-btn--primary');
               document.getElementById('button-audio-enable').classList.add('Vlt-btn--tertiary');
               document.getElementById('button-audio-enable').innerHTML = `<svg><use xlink:href="volta-icons.svg#Vlt-icon-microphone-mute-full" /></svg>`;
+            } else if (type === 'signal:whiteboard') {
+              const { enabled } = JSON.parse(data);
+              if (enabled) {
+                startWhiteboard(false);
+              } else {
+                stopWhiteboard(false);
+              }
             } else if (type === 'signal:chat') {
               const { name, text } = JSON.parse(data);
 
@@ -1818,6 +1841,102 @@
         initializeSession();
       }
 
+      async function toggleWhiteboard() {
+        document.getElementById('button-whiteboard-enable').onclick = null;
+
+        if (!whiteboardStarted) {
+          startWhiteboard(true);
+          const url = `/invision/start`;
+          const body = { sessionId: roomSessionId };
+          const config = {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(body),
+          };
+          if (accessToken != null && accessToken !== '') {
+            config.headers['Authorization'] = `Bearer ${accessToken}`;
+          }
+
+          await fetch(url, config);
+        } else {
+          stopWhiteboard(true);
+          const url = `/invision/stop`;
+          const body = { sessionId: roomSessionId };
+          const config = {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(body),
+          };
+          if (accessToken != null && accessToken !== '') {
+            config.headers['Authorization'] = `Bearer ${accessToken}`;
+          }
+
+          await fetch(url, config);
+        }
+
+        document.getElementById('button-whiteboard-enable').onclick = toggleWhiteboard;
+      }
+
+      function startWhiteboard(notifyEveryone = false) {
+        if (whiteboardStarted) {
+          console.log('Whiteboard has already started');
+          return;
+        }
+
+        // Add iFrame
+        whiteboardIFrame = document.createElement('iframe');
+        whiteboardIFrame.title = 'Whiteboard';
+        whiteboardIFrame.src = `/invision?room=${roomName}`;
+        screenContainer.appendChild(whiteboardIFrame);
+
+        document.getElementById('button-whiteboard-enable').classList.remove('Vlt-btn--tertiary');
+        document.getElementById('button-whiteboard-enable').classList.add('Vlt-btn--primary');
+
+        whiteboardStarted = true;
+        otSpeech.notifySpeakerChange();
+
+        if (notifyEveryone) {
+          sendWhiteboardSignal(true);
+        }
+      }
+
+      function stopWhiteboard(notifyEveryone = false) {
+        if (!whiteboardStarted) {
+          console.log('Whiteboard is not started');
+          return;
+        }
+
+        // Remove iFrame
+        screenContainer.removeChild(whiteboardIFrame);
+        whiteboardIFrame = null;
+
+        document.getElementById('button-whiteboard-enable').classList.add('Vlt-btn--tertiary');
+        document.getElementById('button-whiteboard-enable').classList.remove('Vlt-btn--primary');
+        
+        whiteboardStarted = false;
+        otSpeech.notifySpeakerChange();
+
+        if (notifyEveryone) {
+          sendWhiteboardSignal(false);
+        }
+      }
+
+      function sendWhiteboardSignal(enabled) {
+        OTSession.signal({
+          type: 'whiteboard',
+          data: JSON.stringify({ enabled }),
+        }, (error) => {
+          if (error) {
+            console.error(error);
+            return;
+          }
+        });
+      }
+
       async function toggleTranscription() {
         document.getElementById('button-record').onclick = null;
 
@@ -2104,6 +2223,7 @@
           sound,
           cycleMode = 'auto',
           sub,
+          whiteboard = 'false',
           hide_sidebar = 'false',
           disable_sidebar = 'false',
         } = params;
@@ -2120,6 +2240,7 @@
         userRole = role;
         enableSoundEffect = (sound || 'true') === 'true';
         enableTranscription = (sub || 'false') === 'true';
+        enableWhiteboard = (whiteboard || 'false') === 'true';
         videoCycleMode = cycleMode;
         
         const shouldHideSideBar = (hide_sidebar || 'false') === 'true';
@@ -2161,6 +2282,12 @@
           document.getElementById('button-transcription-enable').style.display = null;
         } else {
           document.getElementById('button-transcription-enable').style.display = 'none';
+        }
+
+        if (enableWhiteboard) {
+          document.getElementById('button-whiteboard-enable').style.display = null;
+        } else {
+          document.getElementById('button-whiteboard-enable').style.display = 'none';
         }
 
         if (shouldDisableSideBar) {

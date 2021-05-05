@@ -18,6 +18,11 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
       default: false,
     },
+    whiteboardOnJoin: {
+      type: DataTypes.BOOLEAN,
+      allowNull: true,
+      default: false,
+    },
     lastPing: {
       type: DataTypes.INTEGER,
       allowNull: false,

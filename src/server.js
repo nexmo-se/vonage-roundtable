@@ -21,6 +21,7 @@ const authEmailDomains = (process.env.AUTH_EMAIL_DOMAINS || '*').split(/,/g);
 const secretToken = process.env.SECRET_TOKEN;
 const roundtableHost = process.env.ROUNDTABLE_HOST;
 const transcriptionHost = process.env.TRANSCRIPTION_HOST;
+const invisionUrl = process.env.INVISION_URL;
 
 const client = new OpenTok(apiKey, apiSecret);
 
@@ -258,6 +259,7 @@ const createRoomSession = async (room, sessionId) => {
       sessionId,
       lastPing: Math.floor(new Date().getTime() / 1000),
       muteOnJoin: false,
+      whiteboardOnJoin: false,
       deleted: 0,
     });
     const roomSession = roomSessionRaw.dataValues;
@@ -274,20 +276,23 @@ app.get('/token', authenticate, async (req, res, next) => {
 
     let sanitizedSessionId = sessionId;
     let muteOnJoin = false;
+    let whiteboardOnJoin = false;
 
     if (room != null && room != '') {
       console.log(`Getting token for room: ${room}`);
-      const { sessionId: roomSessionId, muteOnJoin: roomMuteOnJoin } = await getRoomSession(room);
+      const { sessionId: roomSessionId, muteOnJoin: roomMuteOnJoin, whiteboardOnJoin: roomWhiteboardOnJoin } = await getRoomSession(room);
       if (roomSessionId == null) {
         console.log('creating new session');
         const newSessionId = await createSession();
-        const { sessionId: newRoomSessionId, muteOnJoin: newRoomMuteOnJoin } = await createRoomSession(room, newSessionId);
+        const { sessionId: newRoomSessionId, muteOnJoin: newRoomMuteOnJoin, whiteboardOnJoin: roomWhiteboardOnJoin } = await createRoomSession(room, newSessionId);
         sanitizedSessionId = newRoomSessionId;
         muteOnJoin = newRoomMuteOnJoin;
+        whiteboardOnJoin = roomWhiteboardOnJoin;
       } else {
         console.log('using existing session');
         sanitizedSessionId = roomSessionId;
         muteOnJoin = roomMuteOnJoin;
+        whiteboardOnJoin = roomWhiteboardOnJoin;
       }
     }
 
@@ -297,6 +302,7 @@ app.get('/token', authenticate, async (req, res, next) => {
       sessionId: sanitizedSessionId,
       token,
       muteOnJoin,
+      whiteboardOnJoin,
     });
   } catch (error) {
     console.log(error);
@@ -378,6 +384,45 @@ app.get('/transcribeHost', async (req, res, next) => {
     res.json({ host: transcriptionHost });
   } catch (error) {
     console.log(error);
+    next(error);
+  }
+});
+
+app.get('/invision', async (req, res, next) => {
+  try {
+    const { room } = req.query;
+    console.log(`Getting Invision Board for room ${room}`);
+    res.redirect(invisionUrl);
+  } catch (error) {
+    if (error.response) {
+      console.log(error.response.data);
+    } else {
+      console.log(error);
+    }
+
+    next(error);
+  }
+});
+
+app.post('/invision/:action', async (req, res, next) => {
+  try {
+    const { sessionId } = req.body;
+    const { action } = req.params;
+
+    const boolWhiteboard = action === 'start';
+
+    // Update to Database
+    const { RoomSession } = DatabaseService.models;
+    const query = { where: { sessionId } };
+    const changes = { whiteboardOnJoin: boolWhiteboard };
+    await RoomSession.update(changes, query);
+  } catch (error) {
+    if (error.response) {
+      console.log(error.response.data);
+    } else {
+      console.log(error);
+    }
+
     next(error);
   }
 });
