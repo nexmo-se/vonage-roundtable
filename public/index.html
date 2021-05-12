@@ -730,6 +730,11 @@
 
           OTSession.on('sessionReconnected', (event) => {
             console.log('Session sessionReconnected');
+
+            if (cameraPublisher) {
+              stopCamera();
+              startCamera();
+            }
           });
 
           OTSession.on('streamDestroyed', (event) => {
