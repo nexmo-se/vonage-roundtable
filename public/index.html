@@ -724,6 +724,14 @@
             }
           });
 
+          OTSession.on('sessionReconnecting', (event) => {
+            console.log('Session sessionReconnecting');
+          });
+
+          OTSession.on('sessionReconnected', (event) => {
+            console.log('Session sessionReconnected');
+          });
+
           OTSession.on('streamDestroyed', (event) => {
             console.log('Session streamDestroyed');
 
