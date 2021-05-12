@@ -657,6 +657,7 @@
           console.log('Session Created');
 
           OTSession.on("connectionCreated", function(event) {
+            console.log('Session connectionCreated');
             connectionCount++;
             updateConnectionCount();
 
@@ -664,6 +665,7 @@
             playSoundEffectDebounce();
           });
           OTSession.on("connectionDestroyed", function(event) {
+            console.log('Session connectionDestroyed');
             connectionCount--;
             updateConnectionCount();
 
@@ -672,6 +674,7 @@
           });
 
           OTSession.on('streamCreated', (event) => {
+            console.log('Session streamCreated');
             const layoutContainer = event.stream.videoType === 'screen' || event.stream.videoType === 'custom' ? 'screenContainer' : 'layoutContainer';
             const subscriber = OTSession.subscribe(event.stream, insertDefaultUI ? layoutContainer : null, {
               insertMode: insertDefaultUI ? 'append' : undefined, // not using insert mode for insertDefaultUI true
@@ -700,6 +703,7 @@
             // Note: Use this only if InsertDefaultUI is false
             if (!insertDefaultUI) {
               subscriber.on('videoElementCreated', (e) => {
+                console.log('Subscriber videoElementCreated');
                 const videoElement = e.element;
                 videoElement.style.width = event.stream.videoType === 'screen' ? '100%' : '100%';
                 videoElement.style.height = event.stream.videoType === 'screen' ? 'auto' : '100%';
@@ -721,7 +725,7 @@
           });
 
           OTSession.on('streamDestroyed', (event) => {
-            console.log('Stream Destroyed');
+            console.log('Session streamDestroyed');
 
             // Remove Subscriber Annotation (screen only)
             if (event.stream.videoType === 'screen') {
@@ -751,7 +755,8 @@
           });
 
           OTSession.on('sessionDisconnected', (event) => {
-            console.log('sessionDisconnected');
+            console.log('Session sessionDisconnected');
+
             const { reason } = event;
             if (reason === 'networkDisconnected') {
               console.log('Network disconnected, attempting reconnection');
@@ -1167,6 +1172,7 @@
           });
 
           cameraPublisher.on('streamCreated', (event) => {
+            console.log('Camera Publisher streamCreated');
               // Add to screen
               const speakerId = insertDefaultUI ? cameraPublisher.id : event.stream.id;
               addSelfSpeakerId(speakerId);
@@ -1175,6 +1181,7 @@
           });
 
           cameraPublisher.on('streamDestroyed', (event) => {
+            console.log('Camera Publisher streamDestroyed');
               // Add to screen
               const speakerId = insertDefaultUI ? cameraPublisher.id : event.stream.id;
               removeSelfSpeakerId(speakerId);
@@ -1358,6 +1365,7 @@
           });
 
           screenPublisher.on('streamCreated', (event) => {
+            console.log('Screen Publisher streamCreated');
             otSpeech.notifySpeakerChange();
 
             // Add Publisher Annotation (screen only)
@@ -1365,7 +1373,7 @@
           });
 
           screenPublisher.on('streamDestroyed', (event) => {
-            console.log('Screen: stream destroyed');
+            console.log('Screen Publisher streamDestroyed');
 
             // Remove Publisher Annotation (screen only)
             otAnnotation.endPublisher(screenPublisher)
@@ -1463,10 +1471,12 @@
             });
 
             videoPublisher.on('streamCreated', (event) => {
+            console.log('Video Publisher streamCreated');
               otSpeech.notifySpeakerChange();
             });
 
             videoPublisher.on('streamDestroyed', (event) => {
+            console.log('Video Publisher streamDestroyed');
               stopVideoPlayer();
             });
           };
