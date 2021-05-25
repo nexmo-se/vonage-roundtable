@@ -130,6 +130,13 @@
       <div style="width: 100%; display: flex; flex-direction: column; flex: 1;">
         <div id="publisherContainerScreen" style="margin-bottom: 16px; display: none;"></div>
 
+        <div id="room-control" class="Vlt-form__element" hidden>
+          <label for="room" class="Vlt-label">Room Name</label>
+          <div class="Vlt-input">
+            <input type="text" id="room" />
+          </div>
+        </div>
+
         <div id="name-control" class="Vlt-form__element" hidden>
           <label for="name" class="Vlt-label">Display Name</label>
           <div class="Vlt-input">
@@ -638,6 +645,13 @@
           // Disable button
           document.getElementById("connect").disabled = true;
           document.getElementById("google-connect").disabled = true;
+
+          // Check Room Name sanity
+          if (roomName == null || roomName === '') {
+            document.getElementById("connect").disabled = false;
+            alert('Please provide a room name');
+            return;
+          }
 
           // Check Display Name sanity
           const name = document.getElementById('name').value;
@@ -2285,6 +2299,7 @@
         }
 
         if (room != null && room.charAt(0) === '_') {
+          document.getElementById('room').value = room;
           document.getElementById('name').disabled = true;
           document.getElementById('connect').disabled = true;
           document.getElementById('session-control').hidden = true;
