@@ -647,8 +647,8 @@
           document.getElementById("google-connect").disabled = true;
 
           // Check Room Name sanity
-          const sanityRoomName = document.getElementById('room').value;
-          if (sanityRoomName == null || sanityRoomName === '') {
+          roomName = document.getElementById('room').value;
+          if (roomName == null || roomName === '') {
             document.getElementById("connect").disabled = false;
             alert('Please provide a room name');
             return;
