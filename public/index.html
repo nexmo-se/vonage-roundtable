@@ -653,6 +653,8 @@
             alert('Please provide a room name');
             return;
           }
+          document.getElementById('room').disabled = true;
+          document.getElementById('room-control').hidden = true;
 
           // Check Display Name sanity
           const name = document.getElementById('name').value;
