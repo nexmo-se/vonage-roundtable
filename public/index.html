@@ -13,6 +13,7 @@
     <script src="lib/layout/layout.js"></script>
     <script src="lib/annotation/annotation.js"></script>
     <script src="lib/participation/participation.js"></script>
+    <script src="lib/stats/stats.js"></script>
 
     <style>
       html, body {
@@ -319,6 +320,9 @@
       const layoutContainer = document.getElementById("layoutContainer");
       const screenContainer = document.getElementById("screenContainer");
 
+      let otStats = OTStats();
+      otStats.setPublisherOnStatsAvailableListener(onPublisherStatsAvailable);
+      otStats.setSubscriberOnStatsAvailableListener(onSubscriberStatsAvailable);
       let otParticipation = OTParticipation();
       otParticipation.setOnParticipationChangeListener(onParticipationChange);
 
@@ -693,7 +697,7 @@
           OTSession.on('streamCreated', (event) => {
             console.log('Session streamCreated');
             const layoutContainer = event.stream.videoType === 'screen' || event.stream.videoType === 'custom' ? 'screenContainer' : 'layoutContainer';
-            const subscriber = OTSession.subscribe(event.stream, insertDefaultUI ? layoutContainer : null, {
+            var subscriber = OTSession.subscribe(event.stream, insertDefaultUI ? layoutContainer : null, {
               insertMode: insertDefaultUI ? 'append' : undefined, // not using insert mode for insertDefaultUI true
               fitMode: insertDefaultUI ? 'contain' : undefined, // not using fit mode for insertDefaultUI true
               insertDefaultUI,
@@ -710,6 +714,13 @@
               if (event.stream.videoType !== 'screen') {
                 otSpeech.addSubscriber(subscriber);
               }
+            
+              console.log("subscriber ID - "+subscriber.id)
+              var label = document.createElement("label");
+              label.id = subscriber.id+"lbl";
+              label.style.zIndex = 100;
+              document.getElementById(subscriber.id).appendChild(label);
+              otStats.addSubscriber(subscriber);
             });
 
             // Add Subscriber Annotation (screen only)
@@ -1168,6 +1179,7 @@
             name,
             width: '100%',
             resolution: `${publisherResolution.width}x${publisherResolution.height}`,
+            frameRate: 30
           };
 
           if (videoCycleMode !== 'auto') {
@@ -1193,11 +1205,18 @@
             }
 
             // Publish to Session
+            console.log("Publisher ID - "+cameraPublisher.id)
+            var label = document.createElement("label");
+            label.id = cameraPublisher.id+"lbl";
+            label.style.zIndex = 100;
+            document.getElementById(cameraPublisher.id).appendChild(label);
             OTSession.publish(cameraPublisher, (err) => {
               if (err) {
                 handleError(error);
                 return;
               }
+              otStats.setPublisher(cameraPublisher);
+              otStats.start();
             });
           });
 
@@ -1223,6 +1242,12 @@
         }
       }
       
+      function onPublisherStatsAvailable(bandwidth,framerate,plratio){
+          document.getElementById(cameraPublisher.id+"lbl").innerHTML = bandwidth+"Kbps PL:"+plratio;
+      }
+      function onSubscriberStatsAvailable(id, bandwidth,framerate,plratio){
+          document.getElementById(id+"lbl").innerHTML = bandwidth+"Kbps@"+framerate+"fps PL:"+plratio;
+      }
       function stopCamera() {
         if (cameraPublisher != null) {
           OTSession.unpublish(cameraPublisher);
