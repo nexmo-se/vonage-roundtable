@@ -721,6 +721,11 @@
               label.style.zIndex = 100;
               document.getElementById(subscriber.id).appendChild(label);
               otStats.addSubscriber(subscriber);
+                /*setInterval(function(){
+                    subscriber.getStats((err, statsArray) => {
+                        console.log(statsArray);
+                    });
+                },2000);*/
             });
 
             // Add Subscriber Annotation (screen only)

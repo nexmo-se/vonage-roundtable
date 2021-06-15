@@ -3,17 +3,17 @@ OTStats = (options) => {
     statsInterval: 3000,
   });
     
-  var publisher = null;
-  var publisherHistory ={previousTimestamp:0,prevPublisherBytesSent:0,prevPacketsLost:0,prevPacketsSent:0};
+  let publisher = null;
+  let publisherHistory ={previousTimestamp:0,prevPublisherBytesSent:0,prevPacketsLost:0,prevPacketsSent:0};
     
-  var subscribers = {};
-  var onPublisherStatsAvailableListener = null;
-  var onSubscriberStatsAvailableListener = null;
-  var statsTimer = null;
+  let subscribers = {};
+  let onPublisherStatsAvailableListener = null;
+  let onSubscriberStatsAvailableListener = null;
+  let statsTimer = null;
   
   const addSubscriber = (subscriber) => {
-      subscribers[subscriber.stream.id] = {
-      id: subscriber.stream.id,
+      subscribers[subscriber.id] = {
+      id: subscriber.id,
       subscriber,
       previousTimestamp:0,
       prevPublisherBytesReceived:0,
@@ -69,7 +69,9 @@ OTStats = (options) => {
       
       /* subscriber stats */
       for(var subscriberId in subscribers){
+          console.log(subscriberId);
           let sub = subscribers[subscriberId].subscriber;
+          console.log(sub);
           sub.getStats((err, statsArray) => {
                 if(err){
                     console.log(err);
@@ -96,7 +98,7 @@ OTStats = (options) => {
                 subscribers[subscriberId].previousTimestamp = statsArray[0].stats.timestamp;
                 
                 if(onSubscriberStatsAvailableListener != null){
-                    onSubscriberStatsAvailableListener(subscriberId,videoKbps,videoStats.frameRate,PLRatio);
+                    onSubscriberStatsAvailableListener(sub.id,videoKbps,videoStats.frameRate,PLRatio);
                 }
                 else {
                     console.log("onStatsAvailableListener is null");
@@ -118,5 +120,5 @@ OTStats = (options) => {
       start,
       setPublisherOnStatsAvailableListener,
       setSubscriberOnStatsAvailableListener
-  }
-}
+  };
+};
