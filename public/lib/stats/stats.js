@@ -89,17 +89,13 @@ OTStats = (options) => {
       }
       
       /* subscriber stats */
-      for(var subscriberId in subscribers){
-          //console.log(subscriberId);
+      for(let subscriberId in subscribers){
           let sub = subscribers[subscriberId].subscriber;
-          //console.log(sub);
-          
           sub.getStats((err, statsArray) => {
                 if(err){
                     console.log(err);
                     return;
                 }
-                //console.log(statsArray);
                 
                 if(subscribers[subscriberId].video.previousTimestamp === 0){
                     subscribers[subscriberId].video.previousTimestamp = statsArray.timestamp;
