@@ -13,6 +13,7 @@
     <script src="lib/layout/layout.js"></script>
     <script src="lib/annotation/annotation.js"></script>
     <script src="lib/participation/participation.js"></script>
+    <script src="lib/stats/stats.js"></script>
 
     <style>
       html, body {
@@ -40,6 +41,13 @@
         height: -webkit-fill-available;
         height: fill-available;
       }
+      .statslabel{
+        padding-left: 5px;
+        visibility: visible;
+        line-height: 1.1;
+        font-size: 11px;
+        z-index: 100;
+       }
     </style>
     <link rel="stylesheet" href="volta.min.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -203,6 +211,19 @@
                         </label>
                       </div>
                     </div>
+                      
+                    <div id="enable-stats" class="Vlt-form__element" style="display: flex; flex-direction: column;">
+                      <label class="Vlt-label">Enable Stats</label>
+                      <div class="Vlt-checkbox">
+                        <label for="enable-stats-checkbox">
+                          <span class="Vlt-checkbox__button">
+                            <input id="enable-stats-checkbox" type="checkbox" onchange="enableStats()" checked />
+                            <span class="Vlt-checkbox__icon"></span>
+                          </span>
+                          Enable Stats
+                        </label>
+                      </div>
+                    </div>
 
                     <div class="Vlt-form__element">
                       <label class="Vlt-label" for="number-of-active-speakers-select">Number of on-screen speakers</label>
@@ -319,6 +340,9 @@
       const layoutContainer = document.getElementById("layoutContainer");
       const screenContainer = document.getElementById("screenContainer");
 
+      let otStats = OTStats();
+      otStats.setPublisherOnStatsAvailableListener(onPublisherStatsAvailable);
+      otStats.setSubscriberOnStatsAvailableListener(onSubscriberStatsAvailable);
       let otParticipation = OTParticipation();
       otParticipation.setOnParticipationChangeListener(onParticipationChange);
 
@@ -346,6 +370,7 @@
 
       let recording = false;
       let enableSoundEffect = true;
+      let enableStatsFlag = true;
       let enableAudio = true; // Assume not > 16 speakers
       let enableVideo = true; // Assume not > 16 speakers
       let unpublishDelay = 30; // 30s of disable audio + video to consider unpublishing
@@ -693,7 +718,7 @@
           OTSession.on('streamCreated', (event) => {
             console.log('Session streamCreated');
             const layoutContainer = event.stream.videoType === 'screen' || event.stream.videoType === 'custom' ? 'screenContainer' : 'layoutContainer';
-            const subscriber = OTSession.subscribe(event.stream, insertDefaultUI ? layoutContainer : null, {
+            var subscriber = OTSession.subscribe(event.stream, insertDefaultUI ? layoutContainer : null, {
               insertMode: insertDefaultUI ? 'append' : undefined, // not using insert mode for insertDefaultUI true
               fitMode: insertDefaultUI ? 'contain' : undefined, // not using fit mode for insertDefaultUI true
               insertDefaultUI,
@@ -710,6 +735,18 @@
               if (event.stream.videoType !== 'screen') {
                 otSpeech.addSubscriber(subscriber);
               }
+            
+              console.log("subscriber ID - "+subscriber.id)
+              var label = document.createElement("label");
+              label.id = subscriber.id+"lbl";
+              label.classList.add("statslabel");
+              document.getElementById(subscriber.id).appendChild(label);
+              otStats.addSubscriber(subscriber);
+                /*setInterval(function(){
+                    subscriber.getStats((err, statsArray) => {
+                        console.log(statsArray);
+                    });
+                },2000);*/
             });
 
             // Add Subscriber Annotation (screen only)
@@ -768,6 +805,7 @@
 
             // Remove Subscriber Stream from Participation
             otParticipation.deleteParticipant(event.stream.id);
+            otStats.removeSubscriber(event.stream.id);
 
             // Remove Subscriber div
             const layoutContainer = event.stream.videoType === 'screen' ? 'screenContainer' : 'layoutContainer';
@@ -1168,6 +1206,7 @@
             name,
             width: '100%',
             resolution: `${publisherResolution.width}x${publisherResolution.height}`,
+            frameRate: 30
           };
 
           if (videoCycleMode !== 'auto') {
@@ -1193,11 +1232,18 @@
             }
 
             // Publish to Session
+            console.log("Publisher ID - "+cameraPublisher.id)
+            var label = document.createElement("label");
+            label.id = cameraPublisher.id+"lbl";
+            label.classList.add("statslabel");
+            document.getElementById(cameraPublisher.id).appendChild(label);
             OTSession.publish(cameraPublisher, (err) => {
               if (err) {
                 handleError(error);
                 return;
               }
+              otStats.setPublisher(cameraPublisher);
+              otStats.start();
             });
           });
 
@@ -1223,6 +1269,12 @@
         }
       }
       
+      function onPublisherStatsAvailable(bandwidth,width, height,framerate,plratio){
+          document.getElementById(cameraPublisher.id+"lbl").innerHTML = width+"x"+height+"@"+framerate+"fps<br/>VBW:"+bandwidth+"Kbps PL:"+plratio+"%";
+      }
+      function onSubscriberStatsAvailable(id, video, audio){
+          document.getElementById(id+"lbl").innerHTML = video.width+"x"+video.height+"@"+video.frameRate+"fps<br/>VBW:"+video.bandwidth+"Kbps PL:"+video.packetLoss+"%<br/>ABW:"+audio.bandwidth+"Kbps PL:"+audio.packetLoss+"%";
+      }
       function stopCamera() {
         if (cameraPublisher != null) {
           OTSession.unpublish(cameraPublisher);
@@ -1808,6 +1860,26 @@
         enableSoundCheckbox.disabled = false;
       }
 
+      function enableStats(){
+          if(enableStatsFlag === true){
+              enableStatsFlag = false;
+              otStats.stop();
+              console.log("stopped stats");
+               var labels = document.getElementsByClassName("statslabel");
+               for(i=0; i<labels.length; i++) {
+                  labels[i].style.visibility = "hidden";
+               }
+          }
+          else{
+              enableStatsFlag = true;
+              otStats.start();
+              console.log("starting stats");
+              var labels = document.getElementsByClassName("statslabel");
+               for(i=0; i<labels.length; i++) {
+                  labels[i].style.visibility = "visible";
+               }
+          }
+      }
       function sendChat() {
         const text = document.getElementById('chat-text').value;
         const name = document.getElementById('name').value;
