@@ -334,7 +334,7 @@
     <script>
       const initialNumberOfActiveSpeakers = 2;
       const publisherResolution = { width: 640, height: 480 };
-      const subscriberResolution = { width: 640, height: 480 };
+      const subscriberResolution = { width: 1280, height: 720 };
       const insertDefaultUI = true; // Whether to use default UI from Opentok or add manually
 
       const layoutContainer = document.getElementById("layoutContainer");
@@ -723,8 +723,9 @@
               fitMode: insertDefaultUI ? 'contain' : undefined, // not using fit mode for insertDefaultUI true
               insertDefaultUI,
               nameDisplayMode : 'on',
-              width: event.stream.videoType === 'screen' ? '100%' : 640,
-              height: event.stream.videoType === 'screen' ? '100%' : 480,
+	      preferredFrameRate: 30,
+              width: event.stream.videoType === 'screen' ? '100%' : 1280,
+              height: event.stream.videoType === 'screen' ? '100%' : 720,
               preferredResolution: subscriberResolution,
             }, (error) => {
               if (error) {
@@ -1242,7 +1243,7 @@
                 handleError(error);
                 return;
               }
-              otStats.setPublisher(cameraPublisher);
+              otStats.addPublisher(cameraPublisher);
               otStats.start();
             });
           });
@@ -1269,8 +1270,8 @@
         }
       }
       
-      function onPublisherStatsAvailable(bandwidth,width, height,framerate,plratio){
-          document.getElementById(cameraPublisher.id+"lbl").innerHTML = width+"x"+height+"@"+framerate+"fps<br/>VBW:"+bandwidth+"Kbps PL:"+plratio+"%";
+      function onPublisherStatsAvailable(id,video,audio){
+          document.getElementById(id+"lbl").innerHTML = video.width+"x"+video.height+"@"+video.frameRate+"fps<br/>VBW:"+video.bandwidth+"Kbps PL:"+video.packetLoss+"%<br/>ABW:"+audio.bandwidth+"Kbps PL:"+audio.packetLoss+"%";
       }
       function onSubscriberStatsAvailable(id, video, audio){
           document.getElementById(id+"lbl").innerHTML = video.width+"x"+video.height+"@"+video.frameRate+"fps<br/>VBW:"+video.bandwidth+"Kbps PL:"+video.packetLoss+"%<br/>ABW:"+audio.bandwidth+"Kbps PL:"+audio.packetLoss+"%";
@@ -1438,7 +1439,12 @@
                 handleError(error);
                 return;
               }
-
+                
+              var label = document.createElement("label");
+              label.id = screenPublisher.id+"lbl";
+              label.classList.add("statslabel");
+              document.getElementById(screenPublisher.id).appendChild(label);
+              otStats.addPublisher(screenPublisher);
               document.getElementById('button-screen-share').classList.remove('Vlt-btn--tertiary');
               document.getElementById('button-screen-share').classList.add('Vlt-btn--primary');
               
@@ -1456,7 +1462,7 @@
 
           screenPublisher.on('streamDestroyed', (event) => {
             console.log('Screen Publisher streamDestroyed');
-
+            otStats.removePublisher(screenPublisher);
             // Remove Publisher Annotation (screen only)
             otAnnotation.endPublisher(screenPublisher)
 

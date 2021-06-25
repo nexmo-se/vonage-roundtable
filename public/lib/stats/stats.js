@@ -3,10 +3,8 @@ OTStats = (options) => {
     statsInterval: 3000,
   });
     
-  let publisher = null;
-  let publisherHistory ={previousTimestamp:0,prevPublisherBytesSent:0,prevPacketsLost:0,prevPacketsSent:0};
-    
   let subscribers = {};
+  let publishers = {};
   let onPublisherStatsAvailableListener = null;
   let onSubscriberStatsAvailableListener = null;
   let statsTimer = undefined;
@@ -32,9 +30,27 @@ OTStats = (options) => {
       }
     };
   }
-  const setPublisher = (pub) => {
-      publisher = pub;  
-      console.log("publisher set");
+  
+  const removePublisher = (publisherId) => {
+      delete publishers[publisherId];
+  }
+  const addPublisher = (publisher) => {
+      publishers[publisher.id] = {
+      id: publisher.id,
+      publisher,
+      video:{
+          previousTimestamp:0,
+          prevBytesSent:0,
+          prevPacketsLost:0,
+          prevPacketsSent:0
+      },
+      audio:{
+          previousTimestamp:0,
+          prevBytesSent:0,
+          prevPacketsLost:0,
+          prevPacketsSent:0
+      }
+    };
   }
   
   const start = () => {
@@ -52,41 +68,65 @@ OTStats = (options) => {
   const collectStats = () => {
       
       /*publisher stats */
-      if(publisher != null){
+      for(let publisherId in publishers){
+          let publisher = publishers[publisherId].publisher;
           publisher.getStats((err, statsArray) => {
                 if(err){
                     console.log(err);
                 }
-                if(publisherHistory.previousTimestamp === 0){
-                    publisherHistory.previousTimestamp = statsArray[0].stats.timestamp;
+                if(publishers[publisherId].video.previousTimestamp === 0){
+                    publishers[publisherId].video.previousTimestamp = statsArray[0].stats.timestamp;
+                    publishers[publisherId].audio.previousTimestamp = statsArray[0].stats.timestamp;
                     return;
                 }
-                const audioStats = statsArray[0].stats.audio;
+                const audioStats = statsArray[0].stats.audio === undefined ? {packetsLost:0,packetsSent:0,bytesSent:0} : statsArray[0].stats.audio
                 const videoStats = statsArray[0].stats.video;
-                const packetLost = videoStats.packetsLost - publisherHistory.prevPacketsLost;
-                const packetsSent = videoStats.packetsSent - publisherHistory.prevPacketsSent;
-                let totalPkts = packetLost + packetsSent;
-                let PLRatio = totalPkts > 0 ? (packetLost/totalPkts) : 0;
-                PLRatio = Math.round(PLRatio*100)/100;
               
-                const videoKbps = Math.floor(((videoStats.bytesSent-publisherHistory.prevPublisherBytesSent)*8)/(statsArray[0].stats.timestamp-publisherHistory.previousTimestamp));
+                const videoPacketLost = videoStats.packetsLost - publishers[publisherId].video.prevPacketsLost;
+                const videoPacketsSent = videoStats.packetsSent - publishers[publisherId].video.prevPacketsSent;
+                let totalVideoPkts = videoPacketLost + videoPacketsSent;
+                let videoPLRatio = totalVideoPkts > 0 ? (videoPacketLost/totalVideoPkts) : 0;
+                videoPLRatio = Math.round(videoPLRatio*100)/100;
               
-                publisherHistory.prevPublisherBytesSent = videoStats.bytesSent;
-                publisherHistory.prevPacketsSent = videoStats.packetsSent;
-                publisherHistory.prevPacketsLost = videoStats.packetsLost;
-                publisherHistory.previousTimestamp = statsArray[0].stats.timestamp;
-                
+                const audioPacketLost = audioStats.packetsLost - publishers[publisherId].audio.prevPacketsLost;
+                const audioPacketsSent = audioStats.packetsSent - publishers[publisherId].audio.prevPacketsSent;
+                let totalAudioPkts = audioPacketLost + audioPacketsSent;
+                let audioPLRatio = totalAudioPkts > 0 ? (audioPacketLost/totalAudioPkts) : 0;
+                audioPLRatio = Math.round(audioPLRatio*100)/100;
+              
+                const videoKbps = Math.floor(((videoStats.bytesSent-publishers[publisherId].video.prevPublisherBytesSent)*8)/(statsArray[0].stats.timestamp-publishers[publisherId].video.previousTimestamp));
+              
+                const audioKbps = Math.floor(((audioStats.bytesSent-publishers[publisherId].audio.prevPublisherBytesSent)*8)/(statsArray[0].stats.timestamp-publishers[publisherId].audio.previousTimestamp));
+              
+                publishers[publisherId].video.prevPublisherBytesSent = videoStats.bytesSent;
+                publishers[publisherId].video.prevPacketsSent = videoStats.packetsSent;
+                publishers[publisherId].video.prevPacketsLost = videoStats.packetsLost;
+                publishers[publisherId].video.previousTimestamp = statsArray[0].stats.timestamp;
+                publishers[publisherId].audio.prevPublisherBytesSent = audioStats.bytesSent;
+                publishers[publisherId].audio.prevPacketsSent = audioStats.packetsSent;
+                publishers[publisherId].audio.prevPacketsLost = audioStats.packetsLost;
+                publishers[publisherId].audio.previousTimestamp = statsArray[0].stats.timestamp;
+              
                 if(onPublisherStatsAvailableListener != null){
-                    onPublisherStatsAvailableListener(videoKbps,publisher.videoWidth(),publisher.videoHeight(),Math.round(videoStats.frameRate),PLRatio);
+                    onPublisherStatsAvailableListener(publisherId,{
+                            bandwidth: videoKbps,
+                            width: publisher.videoWidth(),
+                            height: publisher.videoHeight(),
+                            frameRate: Math.round(videoStats.frameRate),
+                            packetLoss: videoPLRatio
+                        },
+                        {
+                            bandwidth: audioKbps,
+                            packetLoss: audioPLRatio
+                        }
+                    );
                 }
                 else {
                     console.log("onStatsAvailableListener is null");
                 }
           });
       }
-      else{
-          console.log("publisher null");
-      }
+     
       
       /* subscriber stats */
       for(let subscriberId in subscribers){
@@ -99,11 +139,12 @@ OTStats = (options) => {
                 
                 if(subscribers[subscriberId].video.previousTimestamp === 0){
                     subscribers[subscriberId].video.previousTimestamp = statsArray.timestamp;
-                    subscribers[subscriberId].video.previousTimestamp = statsArray.timestamp;
+                    subscribers[subscriberId].audio.previousTimestamp = statsArray.timestamp;
                     return;
                 }
                 
-                const audioStats = statsArray.audio;
+                console.log(statsArray);
+                const audioStats = statsArray.audio === undefined ? {packetsLost:0,packetsReceived:0,bytesReceived:0} : statsArray.audio;
                 const videoStats = statsArray.video;
               
                 const videoPacketLost = videoStats.packetsLost - subscribers[subscriberId].video.prevPacketsLost;
@@ -163,7 +204,8 @@ OTStats = (options) => {
   return {
       addSubscriber,
       removeSubscriber,
-      setPublisher,
+      addPublisher,
+      removePublisher,
       start,
       stop,
       setPublisherOnStatsAvailableListener,
