@@ -1462,7 +1462,7 @@
 
           screenPublisher.on('streamDestroyed', (event) => {
             console.log('Screen Publisher streamDestroyed');
-            otStats.removePublisher(screenPublisher);
+            otStats.removePublisher(screenPublisher.id);
             // Remove Publisher Annotation (screen only)
             otAnnotation.endPublisher(screenPublisher)
 
