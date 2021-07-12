@@ -390,7 +390,7 @@
 
       let recording = false;
       let enableSoundEffect = true;
-      let enableStatsFlag = true;
+      let enableStatsFlag = false;
       let enableAudio = true; // Assume not > 16 speakers
       let enableVideo = true; // Assume not > 16 speakers
       let unpublishDelay = 30; // 30s of disable audio + video to consider unpublishing
@@ -1264,7 +1264,7 @@
                 return;
               }
               otStats.addPublisher(cameraPublisher);
-              otStats.start();
+              //otStats.start();
             });
           });
 
