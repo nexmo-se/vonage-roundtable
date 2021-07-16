@@ -59,9 +59,9 @@
       
      
       <div id="subtitleContainer" style="width: 100%; position: absolute; z-index: 8999; bottom: 15px; left: 0; right: 0; padding-left: 5; padding-right: 5px; ">
-           <div id="subtitleSpeaker" style="width: 20%; z-index: 8999; background:#871fff; color:white; visibility: visible">
+           <div id="subtitleSpeaker" style="width: 20%; z-index: 8999; background:#871fff; color:white; visibility: hidden">
                <b id="speakerName"></b>
-      </div>
+            </div>
         <div id="subtitleBubble" style="max-width: 100%; font-size: 18px; color: white; background-color: #00000080;"> </div>
       </div>
 
@@ -1056,6 +1056,9 @@
 
         // Set participant
         otParticipation.setCurrentParticipant(mostActiveSpeakerId);
+        const participantStream = otSpeech.getStreamByStreamId(mostActiveSpeakerId);
+        const participantName = (participantStream || {}).name || ' ';
+        document.getElementById("speakerName").innerHTML=participantName;
       }
 
       function onParticipationChange() {
@@ -1067,7 +1070,7 @@
             const participantName = (participantStream || {}).name || ' ';
             const participationDuration = latestParticipations[participantId] || 0;
             let participationDurationText = '';
-            document.getElementById("speakerName").innerHTML=participantName;
+            
             // h m s ms
             let leftover = participationDuration;
             const hour = Math.floor(leftover / 3600000);
