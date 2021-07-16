@@ -14,7 +14,7 @@ This allows for reduced bandwidth consumption for videos on participants who are
 7. run `npm start`.
 
 ### Setup (Heroku)
-[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/nexmo-se/vonage-roundtable)
+[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/nexmo-se/vonage-roundtable#caption-active-speaker)
 
 
 # Using the application
