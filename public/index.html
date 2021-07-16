@@ -1251,7 +1251,7 @@
                 return;
               }
               otStats.addPublisher(cameraPublisher);
-              otStats.start();
+              //otStats.start();
             });
           });
 
@@ -2378,15 +2378,7 @@
         otSpeech.setOnActiveSpeakerChangeListener(onSpeakerOrderChanged);
         otSpeech.setOnMostActiveSpeakerChangeListener(onMostActiveSpeakerChanged);
 
-        if (name != null && name != '') {
-          document.getElementById('name').value = name;
-          document.getElementById('session-control').hidden = true;
-          document.getElementById('name-control').hidden = true;
-          initializeSession();
-        } else {
-          document.getElementById('session-control').hidden = false;
-          document.getElementById('name-control').hidden = false;
-        }
+        
 
         if (room != null && room.charAt(0) === '_') {
           document.getElementById('room').value = room || '';
@@ -2397,6 +2389,16 @@
         } else {
           document.getElementById('room').value = room || '';
           document.getElementById('room-control').hidden = false;
+        }
+          
+          if (name != null && name != '') {
+          document.getElementById('name').value = name;
+          document.getElementById('session-control').hidden = true;
+          document.getElementById('name-control').hidden = true;
+          initializeSession();
+        } else {
+          document.getElementById('session-control').hidden = false;
+          document.getElementById('name-control').hidden = false;
         }
 
         if (userRole === 'admin') {
