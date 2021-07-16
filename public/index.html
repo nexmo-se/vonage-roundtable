@@ -56,9 +56,13 @@
     <div id="videoContainer" class="fillAvailableHeight" style="position: relative; display: flex; flex: 1; flex-direction: row; background-color: black;">
       <div id="screenContainer" class="fillAvailableHeight" style="position: relative; display: flex; flex: 1; background-color: black; overflow: hidden;"></div>
       <div id="layoutContainer" class="fillAvailableHeight" style="position: relative; display: flex; width: 100%; background-color: black; flex-direction: row;"></div>
-
+      
+     
       <div id="subtitleContainer" style="width: 100%; position: absolute; z-index: 8999; bottom: 15px; left: 0; right: 0; padding-left: 5; padding-right: 5px; ">
-        <div id="subtitleBubble" style="max-width: 100%; font-size: 18px; color: white; background-color: #00000080;"></div>
+           <div id="subtitleSpeaker" style="width: 20%; z-index: 8999; background:#871fff; color:white; visibility: visible">
+               <b id="speakerName"></b>
+      </div>
+        <div id="subtitleBubble" style="max-width: 100%; font-size: 18px; color: white; background-color: #00000080;"> </div>
       </div>
 
       <div id="stream-control" style="width: 100%; position: absolute; z-index: 9999; bottom: 50px; left: 0; right: 0;" hidden>
@@ -1060,10 +1064,10 @@
         const participants = Object.keys(latestParticipations)
           .map((participantId) => {
             const participantStream = otSpeech.getStreamByStreamId(participantId);
-            const participantName = (participantStream || {}).name || ' Unknown';
+            const participantName = (participantStream || {}).name || ' ';
             const participationDuration = latestParticipations[participantId] || 0;
             let participationDurationText = '';
-
+            document.getElementById("speakerName").innerHTML=participantName;
             // h m s ms
             let leftover = participationDuration;
             const hour = Math.floor(leftover / 3600000);
@@ -2070,9 +2074,11 @@
         }
 
         if (transcriptionStarted) {
+          document.getElementById('subtitleSpeaker').style.visibility="visible";
           document.getElementById('button-transcription-enable').classList.remove('Vlt-btn--tertiary');
           document.getElementById('button-transcription-enable').classList.add('Vlt-btn--primary');
         } else {
+          document.getElementById('subtitleSpeaker').style.visibility="hidden";
           document.getElementById('button-transcription-enable').classList.add('Vlt-btn--tertiary');
           document.getElementById('button-transcription-enable').classList.remove('Vlt-btn--primary');
         }
