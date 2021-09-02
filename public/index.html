@@ -9,11 +9,13 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.5/socket.io.js" integrity="sha512-2rUSTSAeOO02jF6eBqENNqPs1EohenJ5j+1dgDPdXSLz9nOlrr8DJk4zW/lDy8rjhGCSonW3Gx812XJQIKZKJQ==" crossorigin="anonymous"></script>
 
     <script src="https://static.opentok.com/v2/js/opentok.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/resonance-audio/build/resonance-audio.min.js"></script>
     <script src="lib/audioLevel/audioLevel.js"></script>
     <script src="lib/layout/layout.js"></script>
     <script src="lib/annotation/annotation.js"></script>
     <script src="lib/participation/participation.js"></script>
     <script src="lib/stats/stats.js"></script>
+    <script src="lib/spacial-audio/spacial-audio.js"></script>
 
     <style>
       html, body {
@@ -48,6 +50,40 @@
         font-size: 11px;
         z-index: 100;
        }
+   * {
+  box-sizing: border-box;
+}
+.container {
+  width: 400px;
+  border: solid 1px #ccc;
+  border-radius: 5px;
+  overflow: hidden;
+}
+.chat-container {
+  height: 95%;
+  overflow: auto;
+  
+}
+.chat-container .message {
+  border-bottom: solid 1px #ccc;
+  padding: 20px;
+  
+}
+.chat-container .message .avatar {
+  float: left;
+  margin-right: 5px;
+}
+.chat-container .message .datetime {
+  float: right;
+  color: #999;
+}
+.send-message-form input {
+  width: 100%;
+  border: none;
+  font-size: 16px;
+  padding: 10px;
+}
+
     </style>
     <link rel="stylesheet" href="volta.min.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -169,24 +205,17 @@
             </div>
             <div class="Vlt-tabs__content" style="flex: 1; height: 0px">
               <div class="Vlt-tabs__panel Vlt-tabs__panel_active" style="height: 100%;">
-                <div style="width: 100%; display: flex; flex-direction: column; height: 100%">
-                  <div style="width: 100%; height: 0px; display: flex; flex: 1; flex-direction: column;">
-                    <div id="chat-container" style="width: 100%; height: 100%; display: flex; flex-direction: column; overflow-y: scroll;">
+                <div class="container">
+                    <div id="chat-container" class="chat-container">
                     </div>
-                  </div>
-
-                  <div style="width: 100%; padding-top: 32px; padding-bottom: 16px; display: flex; flex-direction: row; align-items: center;">
-                    <div class="Vlt-textarea" style="flex: 1; margin-right: 16px;">
-                      <textarea rows="1" id="chat-text" placeholder="Type a message" onkeyup="onChatEnter(event)"></textarea>
-                    </div>
-
-                    <button id="chat-button" class="Vlt-btn Vlt-btn--large Vlt-btn--secondary Vlt-btn--icon" style="margin: 0;" onclick="sendChat()">
+                </div>
+                <div class="Vlt-textarea" >
+                    <textarea style="width:80%;display:inline-table;overflow:hidden" rows="1" id="chat-text" placeholder="Type a message" onkeyup="onChatEnter(event)"></textarea>
+                    <button id="chat-button" class="Vlt-btn Vlt-btn--large Vlt-btn--secondary Vlt-btn--icon" style="margin-top: 0;" onclick="sendChat()">
                       <svg><use xlink:href="volta-icons.svg#Vlt-icon-message-read" /></svg>
                     </button>
-                  </div>
-                  
                 </div>
-              </div>
+              </div>                
 
               <div class="Vlt-tabs__panel" style="height: 100%;">
                 <div><label id="participant-count" class="Vlt-label">Enable Sound Effect</label></div>
@@ -200,7 +229,6 @@
                 <div style="width:100%; height: 100%; display: flex; flex-direction: column; overflow-y: scroll;">
                   <div style="width: 100%; height: 10px; display: flex; flex: 1; flex-direction: column;">
                     <div id="enable-sound" class="Vlt-form__element" style="display: flex; flex-direction: column;">
-                      <label class="Vlt-label">Enable Sound Effect</label>
                       <div class="Vlt-checkbox">
                         <label for="enable-sound-checkbox">
                           <span class="Vlt-checkbox__button">
@@ -213,7 +241,6 @@
                     </div>
                       
                     <div id="enable-stats" class="Vlt-form__element" style="display: flex; flex-direction: column;">
-                      <label class="Vlt-label">Enable Stats</label>
                       <div class="Vlt-checkbox">
                         <label for="enable-stats-checkbox">
                           <span class="Vlt-checkbox__button">
@@ -221,6 +248,17 @@
                             <span class="Vlt-checkbox__icon"></span>
                           </span>
                           Enable Stats
+                        </label>
+                      </div>
+                    </div>
+                    <div id="enhance-audio" class="Vlt-form__element" style="display: flex; flex-direction: column;">
+                      <div class="Vlt-checkbox">
+                        <label for="enhance-audio-checkbox">
+                          <span class="Vlt-checkbox__button">
+                            <input id="enhance-audio-checkbox" type="checkbox" onchange="enableSpatialAudio()"/>
+                            <span class="Vlt-checkbox__icon"></span>
+                          </span>
+                          Enhance Audio
                         </label>
                       </div>
                     </div>
@@ -355,7 +393,7 @@
       otSpeech.setOnActiveSpeakerChangeListener(onSpeakerOrderChanged);
       otSpeech.setOnMostActiveSpeakerChangeListener(onMostActiveSpeakerChanged);
 
-
+      let otSpacialAudio = OTSpacialAudio();
 
       let accessToken;
 
@@ -398,7 +436,7 @@
 
       let whiteboardStarted = false;
       let whiteboardIFrame = null;
-
+      let spacialAudioSupported = true;
 
       // Debouncing logic for handling window resize layout adjustment
       let notifySpeakerChangeTimeout = null;
@@ -414,7 +452,6 @@
       // Listen for Window Resize
       window.addEventListener('resize', () => notifySpeakerChange());
 
-      
       function playSoundEffect() {
         if (enableSoundEffect) {
           const audio = new Audio('sounds/vbc.mp3');
@@ -743,11 +780,10 @@
               label.classList.add("statslabel");
               document.getElementById(subscriber.id).appendChild(label);
               otStats.addSubscriber(subscriber);
-                /*setInterval(function(){
-                    subscriber.getStats((err, statsArray) => {
-                        console.log(statsArray);
-                    });
-                },2000);*/
+               
+              if(spacialAudioSupported){
+                  otSpacialAudio.connectVideoToResonanceAudio(subscriber.id)
+              }
             });
 
             // Add Subscriber Annotation (screen only)
@@ -870,6 +906,7 @@
               row.style.width = '100%';
               row.style.display = 'flex';
               row.style.flexDirection = 'row';
+              row.style.padding= '5px';
 
               const bubble = document.createElement('div');
               bubble.style.flexDirection = 'column';
@@ -1866,6 +1903,13 @@
         enableSoundCheckbox.disabled = false;
       }
 
+      function enableSpatialAudio(){
+          if(otSpacialAudio.getAudioMode() == otSpacialAudio.MODE_NONE)
+            otSpacialAudio.setAudioMode(otSpacialAudio.MODE_SPATIAL);
+          else
+            otSpacialAudio.setAudioMode(otSpacialAudio.MODE_NONE);
+      }
+        
       function enableStats(){
           if(enableStatsFlag === true){
               enableStatsFlag = false;
@@ -2418,7 +2462,14 @@
         } else if (shouldHideSideBar) {
           toggleSidebar();
         }
-
+        
+        if(isSafari()){
+            document.getElementById("enhance-audio").style.display="none";
+            spacialAudioSupported = false;
+        }
+        else{
+            otSpacialAudio.initResonanceAudio();      
+        }
         document.getElementById('enable-sound-checkbox').checked = enableSoundEffect;
 
         document.title = roomName || 'Vonage Roundtable'
@@ -2433,6 +2484,9 @@
           refreshDeviceList();
         }
       });
+      function isSafari(){
+          return !!navigator.userAgent.match(/Version\/[\d\.]+.*Safari/);
+      }
     </script>
     
     <script src="volta.min.js"></script>
