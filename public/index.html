@@ -9,13 +9,13 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.5/socket.io.js" integrity="sha512-2rUSTSAeOO02jF6eBqENNqPs1EohenJ5j+1dgDPdXSLz9nOlrr8DJk4zW/lDy8rjhGCSonW3Gx812XJQIKZKJQ==" crossorigin="anonymous"></script>
 
     <script src="https://static.opentok.com/v2/js/opentok.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/resonance-audio/build/resonance-audio.min.js"></script>
+    <!--script src="https://cdn.jsdelivr.net/npm/resonance-audio/build/resonance-audio.min.js"></script-->
     <script src="lib/audioLevel/audioLevel.js"></script>
     <script src="lib/layout/layout.js"></script>
     <script src="lib/annotation/annotation.js"></script>
     <script src="lib/participation/participation.js"></script>
     <script src="lib/stats/stats.js"></script>
-    <script src="lib/spacial-audio/spacial-audio.js"></script>
+    <!--script src="lib/spacial-audio/spacial-audio.js"></script-->
 
     <style>
       html, body {
@@ -271,7 +271,7 @@
                         </label>
                       </div>
                     </div>
-                    <div id="enhance-audio" class="Vlt-form__element" style="display: flex; flex-direction: column;">
+                    <!--div id="enhance-audio" class="Vlt-form__element" style="display: flex; flex-direction: column;">
                       <div class="Vlt-checkbox">
                         <label for="enhance-audio-checkbox">
                           <span class="Vlt-checkbox__button">
@@ -281,7 +281,7 @@
                           Enhance Audio
                         </label>
                       </div>
-                    </div>
+                    </div-->
 
                     <div class="Vlt-form__element">
                       <label class="Vlt-label" for="number-of-active-speakers-select">Number of on-screen speakers</label>
@@ -413,7 +413,7 @@
       otSpeech.setOnActiveSpeakerChangeListener(onSpeakerOrderChanged);
       otSpeech.setOnMostActiveSpeakerChangeListener(onMostActiveSpeakerChanged);
 
-      let otSpacialAudio = OTSpacialAudio();
+      //let otSpacialAudio = OTSpacialAudio();
 
       let accessToken;
 
@@ -801,9 +801,9 @@
               document.getElementById(subscriber.id).appendChild(label);
               otStats.addSubscriber(subscriber);
                
-              if(spacialAudioSupported){
+              /*if(spacialAudioSupported){
                   otSpacialAudio.connectVideoToResonanceAudio(subscriber.id)
-              }
+              }*/
             });
 
             // Add Subscriber Annotation (screen only)
@@ -1938,12 +1938,12 @@
         enableSoundCheckbox.disabled = false;
       }
 
-      function enableSpatialAudio(){
+      /*function enableSpatialAudio(){
           if(otSpacialAudio.getAudioMode() == otSpacialAudio.MODE_NONE)
             otSpacialAudio.setAudioMode(otSpacialAudio.MODE_SPATIAL);
           else
             otSpacialAudio.setAudioMode(otSpacialAudio.MODE_NONE);
-      }
+      }*/
         
       function enableStats(){
           if(enableStatsFlag === true){
@@ -2500,13 +2500,13 @@
           toggleSidebar();
         }
         
-        if(isSafari()){
+        /*if(isSafari()){
             document.getElementById("enhance-audio").style.display="none";
             spacialAudioSupported = false;
         }
         else{
             otSpacialAudio.initResonanceAudio();      
-        }
+        }*/
         document.getElementById('enable-sound-checkbox').checked = enableSoundEffect;
 
         document.title = roomName || 'Vonage Roundtable'
