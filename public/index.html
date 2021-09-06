@@ -19,7 +19,12 @@
 
     <style>
       html, body {
-        height: 100%;;
+        height: 100%;
+        display: flex;
+        flex-direction: row;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
       }
 
       body, div {
@@ -38,6 +43,15 @@
         scrollbar-width: none;
       }
 
+      #speaker-control {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        display: none;
+        flex-direction: column;
+        flex: 1;
+      }
+
       .fillAvailableHeight {
         height: 100%;
         height: -webkit-fill-available;
@@ -49,46 +63,49 @@
         line-height: 1.1;
         font-size: 11px;
         z-index: 100;
-       }
-   * {
-  box-sizing: border-box;
-}
-.container {
-  width: 400px;
-  border: solid 1px #ccc;
-  border-radius: 5px;
-  overflow: hidden;
-}
-.chat-container {
-  height: 95%;
-  overflow: auto;
-  
-}
-.chat-container .message {
-  border-bottom: solid 1px #ccc;
-  padding: 20px;
-  
-}
-.chat-container .message .avatar {
-  float: left;
-  margin-right: 5px;
-}
-.chat-container .message .datetime {
-  float: right;
-  color: #999;
-}
-.send-message-form input {
-  width: 100%;
-  border: none;
-  font-size: 16px;
-  padding: 10px;
-}
+      }
 
+      * {
+        box-sizing: border-box;
+      }
+
+      .chat-area {
+        display: flex;
+        height: 100%;
+        width: 100%;
+        overflow: hidden;
+        flex-direction: column;
+      }
+
+      .chat-area > .bubbles {
+        overflow-y: auto;
+        flex: 1;
+        flex-basis: 85%;
+      }
+
+      .chat-area > .input-area {
+        display: flex;
+        flex: 1;
+      }
+
+      .chat-area > .input-area > div {
+        flex: 1;
+        margin-right: 16px;
+      }
+
+      .sidenav-container {
+        width: 100%;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+      }
     </style>
+
     <link rel="stylesheet" href="volta.min.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
   </head>
-  <body style="display: flex; flex-direction: row; width: 100%; max-width: 100%;">
+  <body>
     <div id="videoContainer" class="fillAvailableHeight" style="position: relative; display: flex; flex: 1; flex-direction: row; background-color: black;">
       <div id="screenContainer" class="fillAvailableHeight" style="position: relative; display: flex; flex: 1; background-color: black; overflow: hidden;"></div>
       <div id="layoutContainer" class="fillAvailableHeight" style="position: relative; display: flex; width: 100%; background-color: black; flex-direction: row;"></div>
@@ -191,7 +208,7 @@
         <img class="Vlt-sidenav__elem--full" src="vonage-logo.svg"/>
       </div>
 
-      <div style="width: 100%; display: flex; flex-direction: column; flex: 1;">
+      <div class="sidenav-container">
         <div id="publisherContainerScreen" style="margin-bottom: 16px; display: none;"></div>
 
         <div id="room-control" class="Vlt-form__element" hidden>
@@ -216,26 +233,36 @@
           <div class="g-signin2" data-onsuccess="onSignIn"></div>
         </div>
 
-        <div id="speaker-control" style="margin-bottom: 16px; width: 100%; display: none; flex-direction: column; flex: 1;" hidden>
-          <div class="Vlt-tabs" style="flex: 1; display: flex; flex-direction: column; width: 100%;" >
+        <div id="speaker-control" hidden>
+          <div class="Vlt-tabs" style="flex: 1; display: flex; flex-direction: column; width: 100%; height: 100%;" >
             <div class="Vlt-tabs__header Vlt-tabs__header--bordered">
               <div class="Vlt-tabs__link Vlt-tabs__link_active"><svg><use xlink:href="volta-icons.svg#Vlt-icon-chat-2"></use></svg><span>Chat</span></div>
               <div class="Vlt-tabs__link"><svg><use xlink:href="volta-icons.svg#Vlt-icon-group-2"></use></svg><span>Participants</span></div>
               <div class="Vlt-tabs__link"><svg><use xlink:href="volta-icons.svg#Vlt-icon-preferences"></use></svg><span>Settings</span></div>
             </div>
             <div class="Vlt-tabs__content" style="flex: 1; height: 0px">
+
+              <!-- Chat Area -->
               <div class="Vlt-tabs__panel Vlt-tabs__panel_active" style="height: 100%;">
-                <div class="container">
-                    <div id="chat-container" class="chat-container">
+                <div class="chat-area">
+                  <div id="chat-container" class="bubbles">
+                  </div>
+                  <div class="input-area">
+                    <div class="Vlt-textarea" >
+                      <textarea
+                        rows="3"
+                        id="chat-text"
+                        placeholder="Type a message"
+                        onkeyup="onChatEnter(event)"
+                      ></textarea>
                     </div>
-                </div>
-                <div class="Vlt-textarea" >
-                    <textarea style="width:80%;display:inline-table;overflow:hidden" rows="1" id="chat-text" placeholder="Type a message" onkeyup="onChatEnter(event)"></textarea>
                     <button id="chat-button" class="Vlt-btn Vlt-btn--large Vlt-btn--secondary Vlt-btn--icon" style="margin-top: 0;" onclick="sendChat()">
                       <svg><use xlink:href="volta-icons.svg#Vlt-icon-message-read" /></svg>
                     </button>
-                </div>
-              </div>                
+                  </div>
+                </div>                
+              </div>
+              <!-- End of Chat Area -->
 
               <div class="Vlt-tabs__panel" style="height: 100%;">
                 <div><label id="participant-count" class="Vlt-label">Enable Sound Effect</label></div>
