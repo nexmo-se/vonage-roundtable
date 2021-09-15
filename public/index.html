@@ -271,7 +271,7 @@
                         </label>
                       </div>
                     </div>
-                    <!--div id="enhance-audio" class="Vlt-form__element" style="display: flex; flex-direction: column;">
+                    <div id="enhance-audio" class="Vlt-form__element" style="display: flex; flex-direction: column;">
                       <div class="Vlt-checkbox">
                         <label for="enhance-audio-checkbox">
                           <span class="Vlt-checkbox__button">
@@ -281,7 +281,7 @@
                           Enhance Audio
                         </label>
                       </div>
-                    </div-->
+                    </div>
 
                     <div class="Vlt-form__element">
                       <label class="Vlt-label" for="number-of-active-speakers-select">Number of on-screen speakers</label>
@@ -443,7 +443,7 @@
       let videoCycleMode = 'auto';
       let enableTranscription = false;
       let enableWhiteboard = true;
-
+      let spacialAudioSupported = true;
       let audioDeviceIndex = 0;
       let videoDeviceIndex = 0;
       let audioSinkId = null;
@@ -800,10 +800,8 @@
               label.classList.add("statslabel");
               document.getElementById(subscriber.id).appendChild(label);
               otStats.addSubscriber(subscriber);
-               
-              if(spacialAudioSupported){
-                  otSpacialAudio.connectVideoToResonanceAudio(subscriber.id)
-              }
+              otSpacialAudio.connectVideoToResonanceAudio(subscriber)
+              
             });
 
             // Add Subscriber Annotation (screen only)
@@ -1087,6 +1085,7 @@
         adjustLayout(mappedPositions, numberOfActiveSpeakers);
         otAnnotation.updateCanvases();
         updateSpeakerPins();
+        otSpacialAudio.adjustAudioSourcePositions(updatedSpeakers,numberOfActiveSpeakers,"layoutContainer");
 
         if (audioSinkId != null && audioSinkId !== '') {
           console.log('Updating audio sink for all video elements');
