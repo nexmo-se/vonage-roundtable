@@ -123,7 +123,7 @@ function adjustAudioSourcePositions(streams, numSpeakersVisible, layoutDiv){
         let relativeZ = (subscriberCenterZ - layoutCenterZ)*scaleZ;
         console.log("Setting ("+streams[i].subscriber.id+") to X="+relativeX+" Z="+relativeZ);
         /* lets keep people closer to the center of screen further away on Y axis, so it should be like people sitting in half circular shape */
-        let Y = 4 * (1 - (Math.abs(relativeX)/(roomWidth/2)));
+        let Y = 2 * (1 - (Math.abs(relativeX)/(roomWidth/2)));
         setSourcePosition(streams[i].subscriber.id,relativeX,Y,relativeZ);
     }
 }

@@ -723,6 +723,13 @@
       }
 
       async function initializeSession() {
+        if(isSafari()){
+            document.getElementById("enhance-audio").style.display="none";
+            spacialAudioSupported = false;
+        }
+        else{
+            otSpacialAudio.initResonanceAudio();      
+        }
         try {
           // Disable button
           document.getElementById("connect").disabled = true;
@@ -2499,13 +2506,7 @@
           toggleSidebar();
         }
         
-        if(isSafari()){
-            document.getElementById("enhance-audio").style.display="none";
-            spacialAudioSupported = false;
-        }
-        else{
-            otSpacialAudio.initResonanceAudio();      
-        }
+        
         document.getElementById('enable-sound-checkbox').checked = enableSoundEffect;
 
         document.title = roomName || 'Vonage Roundtable'
