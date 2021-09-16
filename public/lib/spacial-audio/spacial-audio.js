@@ -122,7 +122,9 @@ function adjustAudioSourcePositions(streams, numSpeakersVisible, layoutDiv){
         let relativeX = (subscriberCenterX - layoutCenterX)*scaleX;
         let relativeZ = (subscriberCenterZ - layoutCenterZ)*scaleZ;
         console.log("Setting ("+streams[i].subscriber.id+") to X="+relativeX+" Z="+relativeZ);
-        setSourcePosition(streams[i].subscriber.id,relativeX,0,relativeZ);
+        /* lets keep people closer to the center of screen further away on Y axis, so it should be like people sitting in half circular shape */
+        let Y = 4 * (1 - (abs(relativeX)/(roomWidth/2)));
+        setSourcePosition(streams[i].subscriber.id,relativeX,Y,relativeZ);
     }
 }
 function connectVideoToResonanceAudio(subscriber,x=1,y=0,z=1) {
