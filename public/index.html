@@ -737,7 +737,7 @@
 
           // Check Room Name sanity
           roomName = document.getElementById('room').value;
-          if (roomName == null || roomName === '') {
+          if ((roomName == null || roomName === '') && (tokenParam==="" || tokenParam == null)) {
             document.getElementById("connect").disabled = false;
             alert('Please provide a room name');
             return;

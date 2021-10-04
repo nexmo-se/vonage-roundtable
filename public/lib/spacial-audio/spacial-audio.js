@@ -12,7 +12,7 @@ let MODE_NONE=0;
 let MODE_SPATIAL=2;
 
 var roomWidth = 7;
-var roomHeight = 3;
+var roomHeight = 5;
 var roomDepth = 7;
 
 var audioMode = MODE_NONE;
