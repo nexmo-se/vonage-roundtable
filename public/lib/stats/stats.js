@@ -7,6 +7,7 @@ OTStats = (options) => {
   let publishers = {};
   let onPublisherStatsAvailableListener = null;
   let onSubscriberStatsAvailableListener = null;
+  let onAggregateStatsAvailableListener = null;
   let statsTimer = undefined;
   
   const removeSubscriber = (streamId) => {
@@ -20,13 +21,15 @@ OTStats = (options) => {
           previousTimestamp:0,
           prevBytesReceived:0,
           prevPacketsLost:0,
-          prevPacketsReceived:0
+          prevPacketsReceived:0,
+          prevKbps:0
       },
       audio:{
           previousTimestamp:0,
           prevBytesReceived:0,
           prevPacketsLost:0,
-          prevPacketsReceived:0
+          prevPacketsReceived:0,
+          prevKbps:0
       }
     };
   }
@@ -65,7 +68,7 @@ OTStats = (options) => {
           statsTimer = undefined;
       }
   }
-  const collectStats = () => {
+  function collectStats(){
       
       /*publisher stats */
       for(let publisherId in publishers){
@@ -126,7 +129,8 @@ OTStats = (options) => {
                 }
           });
       }
-     
+      
+      getAggregateStats();
       
       /* subscriber stats */
       for(let subscriberId in subscribers){
@@ -140,10 +144,11 @@ OTStats = (options) => {
                 if(subscribers[subscriberId].video.previousTimestamp === 0){
                     subscribers[subscriberId].video.previousTimestamp = statsArray.timestamp;
                     subscribers[subscriberId].audio.previousTimestamp = statsArray.timestamp;
-                    return;
+                    return ;
+                    
                 }
                 
-                console.log(statsArray);
+                //console.log(statsArray);
                 const audioStats = statsArray.audio === undefined ? {packetsLost:0,packetsReceived:0,bytesReceived:0} : statsArray.audio;
                 const videoStats = statsArray.video;
               
@@ -171,6 +176,8 @@ OTStats = (options) => {
                 subscribers[subscriberId].audio.prevPacketsReceived = audioStats.packetsReceived;
                 subscribers[subscriberId].audio.prevPacketsLost = audioStats.packetsLost;
                 subscribers[subscriberId].audio.previousTimestamp = statsArray.timestamp;
+                subscribers[subscriberId].video.prevKbps = videoKbps;
+                subscribers[subscriberId].audio.prevKbps = audioKbps;
                 
                 if(onSubscriberStatsAvailableListener != null){
                     onSubscriberStatsAvailableListener(sub.id,{
@@ -190,15 +197,34 @@ OTStats = (options) => {
                 else {
                     console.log("onStatsAvailableListener is null");
                 }
+                
           });
       }
+      
+      
   }
   
+  const getAggregateStats = () => {
+      let aggregateVBW=0;
+      let aggregateABW=0;
+      for(let subscriberId in subscribers){
+          aggregateABW += subscribers[subscriberId].audio.prevKbps;
+          aggregateVBW += subscribers[subscriberId].video.prevKbps;
+      }
+      if(onAggregateStatsAvailableListener != null){
+          console.log(aggregateABW);
+          onAggregateStatsAvailableListener({vbw:aggregateVBW, 
+                                             abw: aggregateABW});
+      }
+  }
   const setPublisherOnStatsAvailableListener = (listener) => {
     onPublisherStatsAvailableListener = listener;
   }
   const setSubscriberOnStatsAvailableListener = (listener) => {
     onSubscriberStatsAvailableListener = listener;
+  }
+  const setOnAggregateStatsAvailableListener = (listener) => {
+    onAggregateStatsAvailableListener = listener;
   }
   
   return {
@@ -209,6 +235,7 @@ OTStats = (options) => {
       start,
       stop,
       setPublisherOnStatsAvailableListener,
-      setSubscriberOnStatsAvailableListener
+      setSubscriberOnStatsAvailableListener,
+      setOnAggregateStatsAvailableListener,
   };
 };

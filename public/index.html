@@ -100,12 +100,24 @@
         flex-direction: column;
         flex: 1;
       }
+        #combinedstats{
+            position: fixed; 
+            top: 0%; 
+            left: 50%; 
+            visibility: hidden;
+            z-index: 999;
+            background-color: purple;
+            color: white;
+        }
     </style>
 
     <link rel="stylesheet" href="volta.min.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
   </head>
   <body>
+    <div id="combinedstats">
+        
+    </div>
     <div id="videoContainer" class="fillAvailableHeight" style="position: relative; display: flex; flex: 1; flex-direction: row; background-color: black;">
       <div id="screenContainer" class="fillAvailableHeight" style="position: relative; display: flex; flex: 1; background-color: black; overflow: hidden;"></div>
       <div id="layoutContainer" class="fillAvailableHeight" style="position: relative; display: flex; width: 100%; background-color: black; flex-direction: row;"></div>
@@ -428,6 +440,7 @@
       let otStats = OTStats();
       otStats.setPublisherOnStatsAvailableListener(onPublisherStatsAvailable);
       otStats.setSubscriberOnStatsAvailableListener(onSubscriberStatsAvailable);
+      otStats.setOnAggregateStatsAvailableListener(onAggregateStatsAvailable);
       let otParticipation = OTParticipation();
       otParticipation.setOnParticipationChangeListener(onParticipationChange);
 
@@ -1360,6 +1373,10 @@
       function onSubscriberStatsAvailable(id, video, audio){
           document.getElementById(id+"lbl").innerHTML = video.width+"x"+video.height+"@"+video.frameRate+"fps<br/>VBW:"+video.bandwidth+"Kbps PL:"+video.packetLoss+"%<br/>ABW:"+audio.bandwidth+"Kbps PL:"+audio.packetLoss+"%";
       }
+        
+      function onAggregateStatsAvailable(stats){
+          document.getElementById("combinedstats").innerHTML = "VBW:"+stats.vbw+"Kbps ABW:"+stats.abw+"Kbps"; 
+      }
       function stopCamera() {
         if (cameraPublisher != null) {
           OTSession.unpublish(cameraPublisher);
@@ -1981,6 +1998,7 @@
                for(i=0; i<labels.length; i++) {
                   labels[i].style.visibility = "hidden";
                }
+               document.getElementById("combinedstats").style.visibility="hidden";
           }
           else{
               enableStatsFlag = true;
@@ -1990,6 +2008,7 @@
                for(i=0; i<labels.length; i++) {
                   labels[i].style.visibility = "visible";
                }
+              document.getElementById("combinedstats").style.visibility="visible";
           }
       }
       function sendChat() {
