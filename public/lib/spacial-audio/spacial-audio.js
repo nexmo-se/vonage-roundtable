@@ -37,7 +37,7 @@ function setAudioMode(mode){
 function initResonanceAudio() {
     try {
     window.AudioContext = window.AudioContext || window.webkitAudioContext;
-    audioContext = new AudioContext();
+    audioContext = new window.AudioContext();
   } catch (e) {
     console.log('Web Audio API is not supported in this browser.');
     isSupported = false;
@@ -131,7 +131,7 @@ function connectVideoToResonanceAudio(subscriber,x=1,y=0,z=1) {
     if(!isSupported)
         return;
     let subscriberId = subscriber.id;
-    subscriber.setAudioVolume(0);
+    subscriber.setAudioVolume(1);
     
     console.log("Adding streamId="+subscriber.stream.id+" to the map");
     /* find the video element */
