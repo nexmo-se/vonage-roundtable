@@ -1,5 +1,7 @@
 ## How to use this module
-      ```
+
+```
+
       let otStats = OTStats();
       otStats.setPublisherOnStatsAvailableListener(onPublisherStatsAvailable);
       otStats.setSubscriberOnStatsAvailableListener(onSubscriberStatsAvailable);
@@ -21,4 +23,5 @@
       function onAggregateStatsAvailable(stats){
           //your logic 
       }
-      ```
+      
+```
