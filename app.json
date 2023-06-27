@@ -4,7 +4,7 @@
   "repository": "https://github.com/nexmo-se/vonage-roundtable",
   "logo": "https://node-js-sample.herokuapp.com/node.png",
   "addons": [
-    "heroku-postgresql:hobby-dev"
+    "heroku-postgresql:mini"
   ],
   "env": {
     "API_KEY": {
