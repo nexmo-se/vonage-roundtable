@@ -1,5 +1,4 @@
-Please use Video Express if you are looking for a officially supported product - https://tokbox.com/developer/video-express/
-
+This repo is no longer maninatined, we recommend you use the VERA (https://github.com/Vonage/vonage-video-react-app/tree/main)
 # Vonage Roundtable for Multiparty Conference
 ![Main](https://github.com/nexmo-se/vonage-roundtable/blob/master/images/main.png?raw=true)
 
